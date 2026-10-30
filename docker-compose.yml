@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: yadi
+      POSTGRES_PASSWORD: yadi_dev_password
+      POSTGRES_DB: yadi
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - yadi_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yadi -d yadi"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  yadi_db:

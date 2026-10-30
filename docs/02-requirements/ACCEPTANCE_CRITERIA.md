@@ -1,0 +1,45 @@
+# Acceptance Criteria
+
+Same criteria as SRS section 3.1 and 4. A requirement is accepted only when its criterion is verified by the stated method.
+
+- **FR-TASK-001** (Test + Eval): Given a message with title, deadline and duration, the draft shows all three, none invented.
+- **FR-TASK-002** (Test): Edits persist after page refresh; invalid input is rejected with field messages.
+- **FR-TASK-003** (Test): Illegal transitions return CONFLICT; completed/cancelled are terminal except reopen from completed.
+- **FR-TASK-004** (Test): History view lists events in order with actor user/ai/system.
+- **FR-TASK-005** (Test): No scheduled reminder remains for a completed task.
+- **FR-AI-001** (Test + Eval): Malformed model output yields a fallback, not a saved task.
+- **FR-AI-002** (Eval): Ambiguous-date cases produce a question or flagged assumption in 100% of eval cases.
+- **FR-AI-003** (E2E): Simulated outage shows fallback form with the user's text.
+- **FR-AI-004** (Test): ai_usage row exists per call; contains no message text.
+- **FR-PRI-001** (Test): User override persists and is not replaced by regeneration.
+- **FR-PRI-002** (Review): Each recommendation shows a reason.
+- **FR-SCH-001** (Test): Same input always yields the same output.
+- **FR-SCH-002** (Property test): Zero overlaps with fixed events across generated cases.
+- **FR-SCH-003** (Property test): Zero hard-constraint violations.
+- **FR-SCH-004** (Test): Over-capacity input returns unscheduled items with reasons.
+- **FR-SCH-005** (E2E): Locked blocks survive regeneration.
+- **FR-SCH-006** (Test): DST-transition test cases pass.
+- **FR-NOT-001** (Integration): Reminder fires with the web client closed and after a worker restart.
+- **FR-NOT-002** (Integration): Duplicate job delivery produces one notification.
+- **FR-NOT-003** (E2E): Snoozed reminder fires once at the new time.
+- **FR-NOT-004** (E2E): Denied permission still yields an in-app notification.
+- **FR-NOT-005** (Test): Attempts table populated per attempt.
+- **FR-CONV-001** (E2E): Chat command changes the underlying data and the reply states the actual result.
+- **FR-CONV-002** (Eval + Test): Multi-match yields a clarification, never a guess.
+- **FR-CONV-003** (E2E): Confirmation required for bulk or external changes.
+- **FR-MEM-001** (E2E): Edited preference changes planning behaviour.
+- **FR-MEM-002** (E2E): Deleted memory is not used afterwards.
+- **FR-CAL-001** (Integration): Imported event blocks scheduling; revoked access handled.
+- **FR-VOI-001** (E2E): Transcript shown and editable before extraction.
+- **FR-PRO-001** (E2E): User can disable and tune frequency.
+- **FR-SET-001** (E2E): Changes apply to new schedules and reminders.
+- **FR-UI-001** (E2E): All elements render with realistic data and empty states.
+- **NFR-SEC-001** (Test + Scan): Built bundle and logs contain no secrets.
+- **NFR-SEC-002** (Integration): Cross-user access tests return NOT_FOUND/FORBIDDEN.
+- **NFR-SEC-003** (Test): Fuzzed inputs produce 4xx in the standard format.
+- **NFR-PRV-001** (Review): Log samples contain no user text.
+- **NFR-PERF-001** (Perf test): p95 <= 150 ms on 2,000 tasks.
+- **NFR-PERF-002** (Integration): Measured on test workload.
+- **NFR-REL-001** (Integration): Restart test passes.
+- **NFR-ACC-001** (axe + manual): No serious axe violations; keyboard-only run succeeds.
+- **NFR-MNT-001** (CI): Quality gates pass.
