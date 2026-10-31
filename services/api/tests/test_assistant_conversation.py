@@ -236,7 +236,7 @@ def test_move_to_an_exact_time_and_replacing_several_blocks(api: TestClient) -> 
     make(api, "Meeting", fixedStartAt=at(9, 3).isoformat(), fixedEndAt=at(10, 3).isoformat())
     task = make(api, "Long", estimatedMinutes=300)
     api.post("/api/v1/schedule/generate", json={})
-    reply = says(api, intent("move", task_numbers=[2], date_local=str(day()), time_local="10:00"))
+    reply = says(api, intent("move", task_numbers=[1], date_local=str(day()), time_local="10:00"))
     assert reply["kind"] == "done", reply
     mine = [b for b in blocks(api) if b["taskId"] == task["id"]]
     assert len(mine) == 1

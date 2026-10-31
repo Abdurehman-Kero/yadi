@@ -119,7 +119,8 @@ describe("changing the plan by message", () => {
 
   it("only refreshes when something changed", async () => {
     const { onChanged } = setup({
-      message: () => respond(200, { kind: "answer", message: "Next is X.", options: [], taskIds: [] }),
+      message: () =>
+        respond(200, { kind: "answer", message: "Next is X.", options: [], taskIds: [] }),
     });
     send("what next?");
     expect(await screen.findByText("Next is X.")).toBeInTheDocument();

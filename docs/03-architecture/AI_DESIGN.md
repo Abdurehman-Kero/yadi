@@ -28,4 +28,4 @@ Prompt-injection stance: user text and task content are data. Model has no tools
 Timeout 25 s per attempt, 1 retry, per-user limit of 200 calls a day (`AI_DAILY_CALL_LIMIT`). Values are provisional until measured.
 
 ## Evaluation
-`services/api/evals/` holds a labeled set (clear, ambiguous dates, multi-task, conflicting, transcription errors, multi-match references, over-capacity, unsupported actions). Metrics: field accuracy, unnecessary-clarification rate, invalid-action rate. CI tests the scorer only; live-model runs are manual and paid (`scripts/run_ai_eval.py`).
+`services/api/evals/` holds labeled sets for extraction and for intents (clear, ambiguous dates, multi-task, conflicting, transcription errors, multi-match references, over-capacity, unsupported actions). Metrics: field accuracy, unnecessary-clarification rate, invalid-action rate. CI tests the scorer only; live-model runs are manual and paid (`scripts/run_ai_eval.py`).

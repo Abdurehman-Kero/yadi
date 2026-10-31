@@ -1,6 +1,6 @@
 # M05 Completion Report
 
-**Status: BUILT AND VERIFIED, except real browser alerts; awaiting owner review.** (2026-10-31 UTC). Not committed: the owner makes commits.
+**Status: COMPLETE, except one manual browser-alert try.** Committed by the owner in a7aa3cb.
 
 ## Delivered
 - Migration 0005; reminders that follow the task; worker process with leases, retries, recovery and heartbeat.

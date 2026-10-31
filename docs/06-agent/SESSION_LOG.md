@@ -21,3 +21,6 @@
 
 ## 2026-10-31 (M05)
 - Owner approved M04, moved sign-in out of M05, asked for modal forms. Built reminders, worker, notifications, browser alerts and modals. Tests caught a push-key naming bug and a focus-return bug. Real alerts untested. M05 uncommitted.
+
+## 2026-10-31 (M06)
+- Built change-by-chat with a fake model; 10/10 gates. Axe caught `role=log` on a list. Real-AI evaluations not run: no approval. M06 uncommitted.

@@ -2,7 +2,7 @@
 
 **Purpose:** reminders fire from a background worker whether or not Yadi is open, survive restarts, never arrive twice, and are recorded. This milestone also moves the app's forms into modal dialogs, at the owner's request.
 
-**Status:** Built and verified, awaiting owner review. See COMPLETION_REPORT.md.
+**Status:** Complete, except one manual browser-alert try. See COMPLETION_REPORT.md.
 
 ## In scope
 - Durable reminders stored in PostgreSQL; a separate worker process (ADR-002).

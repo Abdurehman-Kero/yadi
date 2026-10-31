@@ -22,7 +22,7 @@ Codes: `VALIDATION_FAILED` 400 · `UNAUTHENTICATED` 401 · `FORBIDDEN` 403 · `N
 | GET `/reminders`, `/reminders/service-status`; POST `/reminders/:id/snooze`, `/cancel` | reminders | M05 |
 | GET `/notifications`; POST `/notifications/:id/read`, `/read-all` | in-app notifications | M05 |
 | POST `/push/subscriptions`, `/push/unsubscribe` | browser alerts | M05 |
-| POST `/assistant/message` | conversational command → proposal; `/assistant/confirm` applies | M06 |
+| POST `/assistant/message` | interprets a message and acts, asks or answers; POST `/assistant/apply` runs a chosen or confirmed action, re-checking it | M06 |
 | GET/PUT `/preferences` | settings | M02+ |
 
 Lists use cursor pagination (`?limit&cursor`). Mutations accept an `Idempotency-Key` header where retries are likely.

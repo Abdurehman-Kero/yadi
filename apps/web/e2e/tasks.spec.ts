@@ -279,8 +279,12 @@ test("a message changes real data through the real API, and asks before cancelli
   expect(stored.status).toBe("cancelled");
 
   const other = unique();
-  const a = await (await page.request.post("/api/v1/tasks", { data: { title: `${other} A` } })).json();
-  const b = await (await page.request.post("/api/v1/tasks", { data: { title: `${other} B` } })).json();
+  const a = await (
+    await page.request.post("/api/v1/tasks", { data: { title: `${other} A` } })
+  ).json();
+  const b = await (
+    await page.request.post("/api/v1/tasks", { data: { title: `${other} B` } })
+  ).json();
   reply = {
     kind: "choose",
     message: "Which one do you mean?",

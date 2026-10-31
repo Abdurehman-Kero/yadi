@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/v1/assistant/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply
+         * @description Runs a proposed action. Checked again in full, whatever the client sends.
+         */
+        post: operations["apply_api_v1_assistant_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assistant/extract": {
         parameters: {
             query?: never;
@@ -18,6 +38,26 @@ export interface paths {
          * @description Understands free text as task drafts for the user to review. Saves nothing.
          */
         post: operations["extract_api_v1_assistant_extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Message
+         * @description Interprets a message and, unless it needs a choice or confirmation, carries it out.
+         */
+        post: operations["message_api_v1_assistant_message_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -425,6 +465,36 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApplyRequest */
+        ApplyRequest: {
+            action: components["schemas"]["ProposedAction"];
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+        };
+        /** AssistantReply */
+        AssistantReply: {
+            action?: components["schemas"]["ProposedAction"] | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "done" | "confirm" | "choose" | "answer" | "create_tasks";
+            /** Message */
+            message: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: components["schemas"]["TaskOption"][];
+            /**
+             * Taskids
+             * @default []
+             */
+            taskIds: string[];
+        };
         /** BlockOut */
         BlockOut: {
             /**
@@ -530,6 +600,21 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** MessageRequest */
+        MessageRequest: {
+            /**
+             * History
+             * @default []
+             */
+            history: components["schemas"]["Turn"][];
+            /**
+             * Recenttaskids
+             * @default []
+             */
+            recentTaskIds: string[];
+            /** Text */
+            text: string;
+        };
         /** NotificationList */
         NotificationList: {
             /** Items */
@@ -584,6 +669,28 @@ export interface components {
              * Format: time
              */
             workStart: string;
+        };
+        /** ProposedAction */
+        ProposedAction: {
+            /** Datelocal */
+            dateLocal?: string | null;
+            /** Endlocal */
+            endLocal?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "move" | "complete" | "start" | "cancel" | "set_priority" | "block_time" | "replan";
+            /** Period */
+            period?: ("morning" | "afternoon" | "evening") | null;
+            /** Priority */
+            priority?: ("critical" | "high" | "medium" | "low") | null;
+            /** Startlocal */
+            startLocal?: string | null;
+            /** Taskid */
+            taskId?: string | null;
+            /** Timelocal */
+            timeLocal?: string | null;
         };
         /** ReminderOut */
         ReminderOut: {
@@ -722,6 +829,18 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** TaskOption */
+        TaskOption: {
+            /** Detail */
+            detail: string;
+            /**
+             * Taskid
+             * Format: uuid
+             */
+            taskId: string;
+            /** Title */
+            title: string;
+        };
         /** TaskOut */
         TaskOut: {
             /** Completedat */
@@ -804,6 +923,16 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** Turn */
+        Turn: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Text */
+            text: string;
+        };
         /** UnscheduledOut */
         UnscheduledOut: {
             /** Alternatives */
@@ -847,6 +976,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    apply_api_v1_assistant_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantReply"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     extract_api_v1_assistant_extract_post: {
         parameters: {
             query?: never;
@@ -867,6 +1029,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtractResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_api_v1_assistant_message_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantReply"];
                 };
             };
             /** @description Validation Error */

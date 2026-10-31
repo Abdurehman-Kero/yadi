@@ -1,4 +1,4 @@
-"""Carries out what was asked, through the same services as the app. Replies describe what happened."""
+"""Carries out what was asked, through the app's own services. Replies describe what happened."""
 
 import uuid
 from datetime import UTC, datetime, timedelta

@@ -16,5 +16,6 @@
 | KI-014 | Tell Yadi cannot create fixed events or dependencies; dependencies have no UI. | User ticks the fixed box on the draft; dependencies are API-only. | Add in M06, once the evaluation exists. |
 | KI-015 | No real browser alert has been received; headless browsers cannot test it. | Browser alerts may need fixes. In-app notifications are unaffected. | Owner tries DEMO_SCRIPT step 7. |
 | KI-016 | The worker is a separate process with nothing to restart it. | No reminders are sent while it is stopped; they wait and arrive late. Settings shows this. | Hosting must keep it running. |
+| KI-017 | M06 has only been tested with a fake model. A misread could act on the wrong task where no confirmation is needed. | Reversible, and the reply states what changed, but unmeasured. | Run the evaluations; consider confirming more actions if accuracy is low. |
 
 Resolved: KI-001 (spec truncation) — full text found in `writing-block.md`.

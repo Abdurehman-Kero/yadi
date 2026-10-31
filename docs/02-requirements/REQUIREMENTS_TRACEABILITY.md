@@ -26,9 +26,9 @@ This table is the live implementation status (SRS.docx shows the baseline). Impl
 | FR-NOT-003 | Snooze and reschedule | Should | M05 | E2E | modules/reminders, worker.py, features/notifications | test_reminders, tasks.spec | Done (M05) |
 | FR-NOT-004 | Permission denial fallback | Must | M05 | E2E | modules/reminders, worker.py, features/notifications | test_reminders, tasks.spec | Done (M05) |
 | FR-NOT-005 | Delivery records | Should | M05 | Test | modules/reminders, worker.py, features/notifications | test_reminders, tasks.spec | Done (M05) |
-| FR-CONV-001 | Conversational updates | Must | M06 | E2E | — | — | Not started |
-| FR-CONV-002 | Reference resolution | Must | M06 | Eval + Test | — | — | Not started |
-| FR-CONV-003 | Confirmation of consequential changes | Must | M06 | E2E | — | — | Not started |
+| FR-CONV-001 | Conversational updates | Must | M06 | E2E | modules/assistant, scheduling/move.py, AssistantCapture | test_assistant_conversation, tasks.spec | Built; real AI untested |
+| FR-CONV-002 | Reference resolution | Must | M06 | Eval + Test | modules/assistant, scheduling/move.py, AssistantCapture | test_assistant_conversation, tasks.spec | Built; real AI untested |
+| FR-CONV-003 | Confirmation of consequential changes | Must | M06 | E2E | modules/assistant, scheduling/move.py, AssistantCapture | test_assistant_conversation, tasks.spec | Built; real AI untested |
 | FR-MEM-001 | User-controlled preferences | Should | M07 | E2E | — | — | Not started |
 | FR-MEM-002 | Controlled memory | Should | M07 | E2E | — | — | Not started |
 | FR-CAL-001 | Calendar integration | Could | M08 | Integration | — | — | Not started |

@@ -18,5 +18,6 @@
 | D-014 | 2026-10-30 | Generating a schedule applies it, with no separate accept step; the design uses neutral surfaces with one green accent. | Accepted (reversible) | Fewer steps for routine use; UX_PRINCIPLES. |
 | D-015 | 2026-10-31 | Real sign-in moved out of M05 to its own step before any hosting. Reminders use the development identity until then. | Accepted by owner | Yadi runs only on the owner's computer for now. |
 | D-016 | 2026-10-31 | Forms open in native `dialog` modals; generated browser-alert keys live only in `.env`. | Accepted | Owner asked for modals; no new dependency. |
+| D-017 | 2026-10-31 | M06: one message box; replies written by code; conversation held in the browser only; flexible moves, complete, start and priority apply directly, while cancel, fixed moves, blocking time and past-deadline moves need confirmation. | Accepted (reversible) | See M06 PLAN. |
 
 Architectural decisions get a full ADR in `docs/03-architecture/ADR/`.
