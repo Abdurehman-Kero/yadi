@@ -1,6 +1,6 @@
 # Data Model (initial, MVP)
 
-Status: Proposed. Refined in M01/M02 migrations.
+Status: Built through migration 0004 (users, user_preferences, tasks, task_events, ai_usage, task_dependencies, schedule_blocks, schedule_runs). Other tables and columns below arrive with the milestone that uses them.
 
 ## Entities
 | Table | Key columns | Notes |

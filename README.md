@@ -2,7 +2,7 @@
 
 AI-powered personal assistant for organizing daily life through natural conversation: task capture, realistic scheduling, reliable reminders, and (later) permissioned memory and calendar integration.
 
-**Status:** M00 complete. M01 (foundation) built and verified, awaiting owner approval. No product features yet.
+**Status:** Working app: tasks, Tell Yadi (Gemini), and a scheduling engine with a Today dashboard. Latest: M04 built and verified, awaiting review. M03's accuracy test is still owed. Reminders are next.
 
 ## Where to start
 

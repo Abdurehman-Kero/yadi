@@ -1,4 +1,4 @@
-// One command for quality gates:  node scripts/run.mjs check | test | all
+// One command for quality gates:  node scripts/run.mjs check | test | e2e | all
 // Runs every step, reports each result, and exits non-zero if any step failed.
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
@@ -25,12 +25,15 @@ const steps = {
     ["API tests (pytest)", uv("pytest", "-q")],
     ["Web tests (vitest)", npmRun("test")],
   ],
+  e2e: [
+    ["Browser tests (playwright + axe)", npmRun("test:e2e")],
+  ],
 };
 
 const mode = process.argv[2] ?? "all";
-const selected = mode === "all" ? [...steps.check, ...steps.test] : steps[mode];
+const selected = mode === "all" ? [...steps.check, ...steps.test, ...steps.e2e] : steps[mode];
 if (!selected) {
-  console.error("Usage: node scripts/run.mjs check | test | all");
+  console.error("Usage: node scripts/run.mjs check | test | e2e | all");
   process.exit(2);
 }
 

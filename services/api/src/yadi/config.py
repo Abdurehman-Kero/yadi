@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     database_url: SecretStr
     log_level: str = "INFO"
     dev_identity_enabled: bool = False
+    gemini_api_key: SecretStr | None = None
+    ai_model: str = "gemini-3.5-flash-lite"
+    ai_daily_call_limit: int = 200
 
     @model_validator(mode="after")
     def _no_dev_identity_in_production(self) -> Self:

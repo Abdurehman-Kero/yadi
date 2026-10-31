@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 log = logging.getLogger("yadi.errors")
@@ -53,6 +54,13 @@ def install_error_handlers(app: FastAPI) -> None:
     async def _http(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         code = _HTTP_CODES.get(exc.status_code, "ERROR")
         return JSONResponse(_body(request, code, str(exc.detail)), exc.status_code)
+
+    @app.exception_handler(OperationalError)
+    async def _db_down(request: Request, exc: OperationalError) -> JSONResponse:
+        log.error("database unavailable: %s", type(exc.orig).__name__)
+        return JSONResponse(
+            _body(request, "SERVICE_UNAVAILABLE", "Database is not available."), 503
+        )
 
     @app.exception_handler(Exception)
     async def _unhandled(request: Request, exc: Exception) -> JSONResponse:

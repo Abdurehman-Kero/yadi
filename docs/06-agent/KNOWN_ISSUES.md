@@ -8,6 +8,11 @@
 | KI-006 | ~~Docker/uv missing~~ | Resolved 2026-10-30 | — |
 | KI-005 | Docx generator scripts live in the session scratchpad, not the repo. | Regenerating SRS.docx requires rewriting the script. | Decide whether to keep a `scripts/docs/` generator (M01). |
 | KI-007 | `localhost` resolves to IPv6 first and stalls ~200 s on this machine. | Slow DB connections if used. | Use `127.0.0.1` (documented). |
-| KI-008 | No browser-level check of the page yet. | UI appearance unverified. | Playwright E2E from M02. |
+| KI-009 | Concurrent edits to one task: last save wins (no version check). | Low with one user. | Revisit when real multi-user arrives. |
+| KI-010 | No screen-reader pass; dark mode not viewed or axe-tested. | Possible accessibility gaps. | Do both before the MVP is called done (M10 at latest). |
+| KI-011 | No real AI call has been made. Request acceptance, accuracy, speed and cost are unknown. | Tell Yadi may fail in live use; it would fall back to the manual form. | Evaluation run once the owner provides a key. |
+| KI-012 | On Gemini's free tier, content is used to improve Google's products. | Not acceptable for real users' personal data. | Synthetic data only until paid billing is on; required before deployment. |
+| KI-013 | Every day counts as a working day. | Plans can land on weekends. | Weekday hours in M07. |
+| KI-014 | Tell Yadi cannot create fixed events or dependencies; dependencies have no UI. | User ticks the fixed box on the draft; dependencies are API-only. | Add in M06, once the evaluation exists. |
 
 Resolved: KI-001 (spec truncation) — full text found in `writing-block.md`.

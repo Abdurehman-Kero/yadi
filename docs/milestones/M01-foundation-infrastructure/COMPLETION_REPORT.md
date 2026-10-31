@@ -1,6 +1,6 @@
 # M01 Completion Report
 
-**Status: BUILT AND VERIFIED — awaiting owner approval.** (2026-10-30)
+**Status: COMPLETE.** Verified 2026-10-30; owner committed it (035c673) and started M02.
 
 ## Delivered
 - Docker Compose PostgreSQL 17; `.env.example`, `.gitignore`, `.editorconfig`, `CONTRIBUTING.md`.
