@@ -25,10 +25,12 @@ from yadi.modules.tasks.schemas import TaskCreate, TaskUpdate, check_fixed_range
 FINISHED = {TaskStatus.COMPLETED.value, TaskStatus.CANCELLED.value}
 
 
-def _record(session: Session, task: Task, event_type: str, payload: dict[str, Any]) -> None:
+def _record(
+    session: Session, task: Task, event_type: str, payload: dict[str, Any], actor: str = "user"
+) -> None:
     session.add(
         TaskEvent(
-            task_id=task.id, user_id=task.user_id, type=event_type, actor="user", payload=payload
+            task_id=task.id, user_id=task.user_id, type=event_type, actor=actor, payload=payload
         )
     )
 
@@ -52,7 +54,9 @@ def _load(session: Session, user_id: uuid.UUID, task_id: uuid.UUID, *, lock: boo
     return task
 
 
-def create_task(session: Session, user_id: uuid.UUID, data: TaskCreate) -> Task:
+def create_task(
+    session: Session, user_id: uuid.UUID, data: TaskCreate, *, actor: str = "user"
+) -> Task:
     task = Task(
         id=uuid.uuid4(),
         user_id=user_id,
@@ -70,7 +74,7 @@ def create_task(session: Session, user_id: uuid.UUID, data: TaskCreate) -> Task:
     task.status = _details_status(task).value
     session.add(task)
     session.flush()
-    _record(session, task, "created", {})
+    _record(session, task, "created", {}, actor)
     sync_reminders(session, user_id, [task], datetime.now(UTC))
     session.commit()
     return task
@@ -80,7 +84,14 @@ def get_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID) -> Task:
     return _load(session, user_id, task_id)
 
 
-def update_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID, data: TaskUpdate) -> Task:
+def update_task(
+    session: Session,
+    user_id: uuid.UUID,
+    task_id: uuid.UUID,
+    data: TaskUpdate,
+    *,
+    actor: str = "user",
+) -> Task:
     task = _load(session, user_id, task_id, lock=True)
     if task.status in FINISHED:
         raise AppError("CONFLICT", 409, "Finished tasks cannot be edited. Reopen it first.")
@@ -105,14 +116,19 @@ def update_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID, data: 
     if task.status in (TaskStatus.INBOX, TaskStatus.PLANNED):
         task.status = _details_status(task).value
     task.updated_at = datetime.now(UTC)
-    _record(session, task, "updated", {"changed": sorted(changed)})
+    _record(session, task, "updated", {"changed": sorted(changed)}, actor)
     sync_reminders(session, user_id, [task], task.updated_at)
     session.commit()
     return task
 
 
 def _transition(
-    session: Session, user_id: uuid.UUID, task_id: uuid.UUID, target: TaskStatus, event_type: str
+    session: Session,
+    user_id: uuid.UUID,
+    task_id: uuid.UUID,
+    target: TaskStatus,
+    event_type: str,
+    actor: str = "user",
 ) -> Task:
     task = _load(session, user_id, task_id, lock=True)
     current = TaskStatus(task.status)
@@ -127,22 +143,28 @@ def _transition(
                 ScheduleBlock.task_id == task.id, ScheduleBlock.end_at > task.updated_at
             )
         )
-    _record(session, task, event_type, {"from": current.value, "to": target.value})
+    _record(session, task, event_type, {"from": current.value, "to": target.value}, actor)
     sync_reminders(session, user_id, [task], task.updated_at)
     session.commit()
     return task
 
 
-def start_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID) -> Task:
-    return _transition(session, user_id, task_id, TaskStatus.IN_PROGRESS, "started")
+def start_task(
+    session: Session, user_id: uuid.UUID, task_id: uuid.UUID, *, actor: str = "user"
+) -> Task:
+    return _transition(session, user_id, task_id, TaskStatus.IN_PROGRESS, "started", actor)
 
 
-def complete_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID) -> Task:
-    return _transition(session, user_id, task_id, TaskStatus.COMPLETED, "completed")
+def complete_task(
+    session: Session, user_id: uuid.UUID, task_id: uuid.UUID, *, actor: str = "user"
+) -> Task:
+    return _transition(session, user_id, task_id, TaskStatus.COMPLETED, "completed", actor)
 
 
-def cancel_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID) -> Task:
-    return _transition(session, user_id, task_id, TaskStatus.CANCELLED, "cancelled")
+def cancel_task(
+    session: Session, user_id: uuid.UUID, task_id: uuid.UUID, *, actor: str = "user"
+) -> Task:
+    return _transition(session, user_id, task_id, TaskStatus.CANCELLED, "cancelled", actor)
 
 
 def reopen_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID) -> Task:

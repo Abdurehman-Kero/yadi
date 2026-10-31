@@ -212,6 +212,7 @@ export function TodayScreen() {
               setNotice(`Added "${task.title}".`);
               reload();
             }}
+            onChanged={reload}
           />
           <section className="panel" aria-labelledby="today-schedule">
             <div className="panel-header">

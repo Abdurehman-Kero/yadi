@@ -20,6 +20,10 @@ export type NotificationList = components["schemas"]["NotificationList"];
 export type ServiceStatus = components["schemas"]["ServiceStatus"];
 export type PushSubscriptionInput = components["schemas"]["SubscriptionRequest"];
 
+export type AssistantReply = components["schemas"]["AssistantReply"];
+export type ProposedAction = components["schemas"]["ProposedAction"];
+export type ConversationTurn = components["schemas"]["Turn"];
+
 export type ErrorDetail = { field: string; issue: string };
 
 export class ApiError extends Error {
@@ -75,6 +79,14 @@ export const listTaskEvents = (id: string) => request<TaskEvent[]>(`/tasks/${id}
 
 export const extractTasks = (text: string) =>
   send<ExtractResponse>("POST", "/assistant/extract", { text });
+
+export const sendAssistantMessage = (
+  text: string,
+  history: ConversationTurn[],
+  recentTaskIds: string[],
+) => send<AssistantReply>("POST", "/assistant/message", { text, history, recentTaskIds });
+export const applyAssistantAction = (action: ProposedAction, confirmed: boolean) =>
+  send<AssistantReply>("POST", "/assistant/apply", { action, confirmed });
 
 export const getSchedule = () => request<Schedule>("/schedule");
 export const generateSchedule = () => send<Schedule>("POST", "/schedule/generate", { days: 7 });

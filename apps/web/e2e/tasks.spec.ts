@@ -135,7 +135,7 @@ test("without an AI key, Tell Yadi falls back to the manual form", async ({ page
   await page.goto("/");
   const title = unique();
   await page.getByLabel("Your message").fill(title);
-  await page.getByRole("button", { name: "Understand" }).click();
+  await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "not available" })).toBeVisible();
   await page.getByRole("button", { name: "Save task" }).click();
   await expect(page.getByRole("status").filter({ hasText: `Added "${title}"` })).toBeVisible();
@@ -146,6 +146,9 @@ test("without an AI key, Tell Yadi falls back to the manual form", async ({ page
 test("a draft is reviewed and corrected before it is saved", async ({ page }) => {
   await page.goto("/");
   const title = unique();
+  await page.route("**/api/v1/assistant/message", (route) =>
+    route.fulfill({ json: { kind: "create_tasks", message: "", options: [], taskIds: [] } }),
+  );
   await page.route("**/api/v1/assistant/extract", (route) =>
     route.fulfill({
       json: {
@@ -166,7 +169,7 @@ test("a draft is reviewed and corrected before it is saved", async ({ page }) =>
     }),
   );
   await page.getByLabel("Your message").fill("finish my report by March 1st");
-  await page.getByRole("button", { name: "Understand" }).click();
+  await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByText("What time on March 1st?")).toBeVisible();
 
   const results = new AxeBuilder({ page });
@@ -246,6 +249,60 @@ test("Yadi plans around a fixed event, explains it, and reports what does not fi
   await page.getByRole("button", { name: "Replan" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Plan updated" })).toBeVisible();
   await expect(planned.getByText("Kept in place")).toBeVisible();
+});
+
+test("a message changes real data through the real API, and asks before cancelling", async ({
+  page,
+}) => {
+  const title = unique();
+  const created = await (await page.request.post("/api/v1/tasks", { data: { title } })).json();
+  // Only the model's reading is mocked: /assistant/apply and the rules behind it are real.
+  let reply: object = {
+    kind: "confirm",
+    message: `Cancel "${title}"? This cannot be undone.`,
+    action: { kind: "cancel", taskId: created.id },
+    options: [],
+    taskIds: [created.id],
+  };
+  await page.route("**/api/v1/assistant/message", (route) => route.fulfill({ json: reply }));
+
+  await page.goto("/");
+  await page.getByLabel("Your message").fill("forget that task");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("log")).toContainText("cannot be undone");
+  let stored = await (await page.request.get(`/api/v1/tasks/${created.id}`)).json();
+  expect(stored.status).toBe("inbox");
+
+  await page.getByRole("button", { name: "Yes, do it" }).click();
+  await expect(page.getByRole("log")).toContainText(`Cancelled "${title}"`);
+  stored = await (await page.request.get(`/api/v1/tasks/${created.id}`)).json();
+  expect(stored.status).toBe("cancelled");
+
+  const other = unique();
+  const a = await (await page.request.post("/api/v1/tasks", { data: { title: `${other} A` } })).json();
+  const b = await (await page.request.post("/api/v1/tasks", { data: { title: `${other} B` } })).json();
+  reply = {
+    kind: "choose",
+    message: "Which one do you mean?",
+    action: { kind: "complete" },
+    options: [
+      { taskId: a.id, title: `${other} A`, detail: "Inbox" },
+      { taskId: b.id, title: `${other} B`, detail: "Inbox" },
+    ],
+    taskIds: [],
+  };
+  await page.getByLabel("Your message").fill("that one is done");
+  await page.getByRole("button", { name: "Send" }).click();
+  await page.getByRole("button", { name: new RegExp(`${other} B`) }).click();
+  await expect(page.getByRole("log")).toContainText(`Marked "${other} B" as completed`);
+  expect((await (await page.request.get(`/api/v1/tasks/${b.id}`)).json()).status).toBe("completed");
+  expect((await (await page.request.get(`/api/v1/tasks/${a.id}`)).json()).status).toBe("inbox");
+  const events = await (await page.request.get(`/api/v1/tasks/${b.id}/events`)).json();
+  expect(events.at(-1).actor).toBe("ai");
+
+  const results = await new AxeBuilder({ page }).analyze();
+  const serious = results.violations.filter((v) => ["serious", "critical"].includes(v.impact!));
+  expect(serious.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 });
 
 test("a modal traps focus, closes with Escape and returns focus", async ({ page }) => {

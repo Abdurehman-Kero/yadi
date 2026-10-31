@@ -2,22 +2,71 @@
 
 Usage, from services/api, in Git Bash on Windows:
     PYTHONPATH="src;." python -m uv run python scripts/run_ai_eval.py --yes
+Add --intents to score understanding of changes and questions instead of new tasks.
 """
 
 import json
 import sys
+import uuid
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
+from evals.intents import score_intent
 from evals.scoring import score_case
 
 from yadi.config import Settings
 from yadi.modules.assistant.ai.client import AiError
 from yadi.modules.assistant.ai.gemini_client import GeminiLlmClient
+from yadi.modules.assistant.conversation import SYSTEM_PROMPT as CONVERSATION_PROMPT
+from yadi.modules.assistant.conversation import Intent
+from yadi.modules.assistant.conversation import build_prompt as build_message_prompt
 from yadi.modules.assistant.extraction import SYSTEM_PROMPT, build_prompt
 from yadi.modules.assistant.schemas import Extraction
 from yadi.modules.assistant.service import estimate_cost
+from yadi.modules.tasks.models import Task
+
+
+def _candidate(raw: dict[str, Any], number: int) -> Task:
+    return Task(
+        id=uuid.UUID(int=number),
+        title=raw["title"],
+        status=raw["status"],
+        due_at=datetime.fromisoformat(raw["due"]) if "due" in raw else None,
+        fixed_start_at=datetime.fromisoformat(raw["fixed_start"]) if "fixed_start" in raw else None,
+    )
+
+
+def run_intents(client: GeminiLlmClient) -> None:
+    data = json.loads(
+        (Path(__file__).parents[1] / "evals" / "intent_cases.json").read_text("utf-8")
+    )
+    now = datetime.fromisoformat(data["now"])
+    tasks = [_candidate(raw, i) for i, raw in enumerate(data["tasks"], start=1)]
+    passed = 0
+    for case in data["cases"]:
+        prompt = build_message_prompt(
+            case["text"],
+            tasks=tasks,
+            recent={uuid.UUID(int=n) for n in case.get("recent", [])},
+            history=[],
+            now=now,
+            timezone=data["timezone"],
+        )
+        try:
+            result = client.generate_structured(
+                schema=Intent, system=CONVERSATION_PROMPT, prompt=prompt
+            )
+        except AiError as exc:
+            print(f"ERROR {case['id']}: {exc.kind}")
+            continue
+        failures = score_intent(case["expect"], result.output)
+        passed += not failures
+        print(f"{'PASS' if not failures else 'FAIL'}  {case['id']}")
+        for failure in failures:
+            print(f"      {failure}")
+    print(f"\nIntents: {passed}/{len(data['cases'])} passed.")
 
 
 def main() -> int:
@@ -34,6 +83,9 @@ def main() -> int:
     client = GeminiLlmClient(
         api_key=settings.gemini_api_key.get_secret_value(), model=settings.ai_model
     )
+    if "--intents" in sys.argv:
+        run_intents(client)
+        return 0
     passed = 0
     cost = Decimal(0)
     for case in data["cases"]:
