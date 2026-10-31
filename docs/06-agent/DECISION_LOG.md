@@ -16,5 +16,7 @@
 | D-012 | 2026-10-30 | **Owner chose Google Gemini instead of Anthropic.** Default `gemini-3.5-flash-lite`. Free tier for development with synthetic data only; paid billing before real users, because free-tier content is used to improve Google's products. | Accepted by owner; model choice pending evaluation | Google pricing page, 2026-10-30. |
 | D-013 | 2026-10-30 | **Documented exception:** owner chose to start M04 before M03's live accuracy test, and asked for a UI redesign within M04. The test is still owed before the MVP is called complete. | Accepted by owner | Rule 14 of the brief requires an explicit exception. |
 | D-014 | 2026-10-30 | Generating a schedule applies it, with no separate accept step; the design uses neutral surfaces with one green accent. | Accepted (reversible) | Fewer steps for routine use; UX_PRINCIPLES. |
+| D-015 | 2026-10-31 | Real sign-in moved out of M05 to its own step before any hosting. Reminders use the development identity until then. | Accepted by owner | Yadi runs only on the owner's computer for now. |
+| D-016 | 2026-10-31 | Forms open in native `dialog` modals; generated browser-alert keys live only in `.env`. | Accepted | Owner asked for modals; no new dependency. |
 
 Architectural decisions get a full ADR in `docs/03-architecture/ADR/`.

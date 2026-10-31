@@ -2,7 +2,7 @@
 
 AI-powered personal assistant for organizing daily life through natural conversation: task capture, realistic scheduling, reliable reminders, and (later) permissioned memory and calendar integration.
 
-**Status:** Working app: tasks, Tell Yadi (Gemini), and a scheduling engine with a Today dashboard. Latest: M04 built and verified, awaiting review. M03's accuracy test is still owed. Reminders are next.
+**Status:** Working app: tasks, Tell Yadi (Gemini), and a scheduling engine with a Today dashboard. Latest: M05 reminders built and verified, awaiting review. M03's accuracy test is still owed. Conversational changes (M06) are next.
 
 ## Where to start
 
@@ -36,6 +36,8 @@ PYTHONPATH=src python -m uv run python -m yadi.db.seed   # dev user (development
 python -m uv run uvicorn --app-dir src --factory yadi.main:create_app --port 8000
 # second terminal
 cd apps/web && npm install && npm run dev  # http://localhost:3000
+# third terminal: sends reminders
+cd services/api && PYTHONPATH=src python -m uv run python -m yadi.worker
 ```
 
 Quality gates, from the repo root: `node scripts/run.mjs check`, `node scripts/run.mjs test`, or `node scripts/run.mjs all`.

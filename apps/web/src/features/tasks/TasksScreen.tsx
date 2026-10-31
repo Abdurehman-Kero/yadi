@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { Modal } from "@/components/Modal";
 import {
   cancelTask,
   completeTask,
@@ -129,6 +130,7 @@ export function TasksScreen() {
     );
   }
   if (!timeZone) return <p role="status">Loading your tasks…</p>;
+  const editing = tasks?.find((task) => task.id === editingId);
 
   return (
     <>
@@ -136,22 +138,18 @@ export function TasksScreen() {
         <p className="page-subtitle">
           Times are in {timeZone}. <Link href="/settings">Change timezone</Link>
         </p>
-        <button
-          type="button"
-          className="button-primary"
-          aria-expanded={adding}
-          onClick={() => setAdding((value) => !value)}
-        >
-          {adding ? "Close form" : "New task"}
+        <button type="button" className="button-primary" onClick={() => setAdding(true)}>
+          New task
         </button>
       </div>
 
       {adding && (
-        <section aria-labelledby="add-task" className="panel">
-          <h2 id="add-task">Add a task</h2>
+        <Modal title="New task" onClose={() => setAdding(false)}>
           <TaskForm
             timeZone={timeZone}
             submitLabel="Add task"
+            onDiscard={() => setAdding(false)}
+            discardLabel="Close"
             onSubmit={async (values) => {
               setNotice(null);
               const created = await createTask(values);
@@ -159,10 +157,11 @@ export function TasksScreen() {
                 setTasks((list) => [created, ...(list ?? [])]);
                 setNow(Date.now());
               }
+              setAdding(false);
               setNotice(`Added "${created.title}".`);
             }}
           />
-        </section>
+        </Modal>
       )}
 
       <p className="live-region" role="status">
@@ -197,38 +196,20 @@ export function TasksScreen() {
           <p className="empty">{EMPTY_MESSAGES[view]}</p>
         ) : (
           <ul className="task-list">
-            {tasks.map((task) =>
-              editingId === task.id ? (
-                <li key={task.id} className="task-row">
-                  <TaskForm
-                    task={task}
-                    timeZone={timeZone}
-                    submitLabel="Save changes"
-                    onDiscard={() => setEditingId(null)}
-                    onSubmit={async (values) => {
-                      applyResult(await updateTask(task.id, values));
-                      setEditingId(null);
-                      setNotice(`Saved "${values.title}".`);
-                    }}
-                  />
-                </li>
-              ) : (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  timeZone={timeZone}
-                  now={now}
-                  busy={busyId === task.id}
-                  onStart={() => runAction(task, startTask, (title) => `Started "${title}".`)}
-                  onComplete={() =>
-                    runAction(task, completeTask, (title) => `Completed "${title}".`)
-                  }
-                  onReopen={() => runAction(task, reopenTask, (title) => `Reopened "${title}".`)}
-                  onCancel={() => runAction(task, cancelTask, (title) => `Cancelled "${title}".`)}
-                  onEdit={() => setEditingId(task.id)}
-                />
-              ),
-            )}
+            {tasks.map((task) => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                timeZone={timeZone}
+                now={now}
+                busy={busyId === task.id}
+                onStart={() => runAction(task, startTask, (title) => `Started "${title}".`)}
+                onComplete={() => runAction(task, completeTask, (title) => `Completed "${title}".`)}
+                onReopen={() => runAction(task, reopenTask, (title) => `Reopened "${title}".`)}
+                onCancel={() => runAction(task, cancelTask, (title) => `Cancelled "${title}".`)}
+                onEdit={() => setEditingId(task.id)}
+              />
+            ))}
           </ul>
         )}
         {nextCursor && (
@@ -237,6 +218,22 @@ export function TasksScreen() {
           </button>
         )}
       </section>
+
+      {editing && (
+        <Modal title="Edit task" onClose={() => setEditingId(null)}>
+          <TaskForm
+            task={editing}
+            timeZone={timeZone}
+            submitLabel="Save changes"
+            onDiscard={() => setEditingId(null)}
+            onSubmit={async (values) => {
+              applyResult(await updateTask(editing.id, values));
+              setEditingId(null);
+              setNotice(`Saved "${values.title}".`);
+            }}
+          />
+        </Modal>
+      )}
     </>
   );
 }

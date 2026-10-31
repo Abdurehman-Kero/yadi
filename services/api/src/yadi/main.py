@@ -9,6 +9,7 @@ from yadi.modules.assistant.ai.gemini_client import GeminiLlmClient
 from yadi.modules.assistant.router import router as assistant_router
 from yadi.modules.health.router import router as health_router
 from yadi.modules.preferences.router import router as preferences_router
+from yadi.modules.reminders.router import router as reminders_router
 from yadi.modules.scheduling.router import router as scheduling_router
 from yadi.modules.tasks.router import router as tasks_router
 
@@ -33,4 +34,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(preferences_router, prefix="/api/v1")
     app.include_router(assistant_router, prefix="/api/v1")
     app.include_router(scheduling_router, prefix="/api/v1")
+    app.include_router(reminders_router, prefix="/api/v1")
     return app

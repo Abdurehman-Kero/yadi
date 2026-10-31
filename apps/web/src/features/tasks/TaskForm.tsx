@@ -12,9 +12,11 @@ export const PRIORITIES: { value: TaskPriority; label: string }[] = [
   { value: "low", label: "Low" },
 ];
 
+const REMINDER_OPTIONS = ["5", "15", "30", "60"];
+
 type Props = {
   task?: Task;
-  initial?: TaskCreate;
+  initial?: Partial<TaskCreate>;
   discardLabel?: string;
   timeZone: string;
   submitLabel: string;
@@ -46,6 +48,13 @@ export function TaskForm({
     start?.fixedEndAt ? utcToWallTime(start.fixedEndAt, timeZone) : "",
   );
   const [period, setPeriod] = useState<string>(start?.preferredPeriod ?? "");
+  const [reminder, setReminder] = useState(() =>
+    start?.reminderEnabled === false
+      ? "none"
+      : start?.reminderMinutesBefore != null
+        ? String(start.reminderMinutesBefore)
+        : "default",
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -72,6 +81,9 @@ export function TaskForm({
         estimatedMinutes: minutes ? Number(minutes) : null,
         fixedStartAt: isFixed ? wallTimeToUtc(fixedStart, timeZone) : null,
         fixedEndAt: isFixed ? wallTimeToUtc(fixedEnd, timeZone) : null,
+        reminderEnabled: reminder !== "none",
+        reminderMinutesBefore:
+          reminder === "none" || reminder === "default" ? null : Number(reminder),
         preferredPeriod:
           isFixed || !period ? null : (period as Required<TaskCreate>["preferredPeriod"]),
       });
@@ -85,6 +97,7 @@ export function TaskForm({
         setFixedStart("");
         setFixedEnd("");
         setPeriod("");
+        setReminder("default");
       }
     } catch (error) {
       // What the user typed stays in the form so nothing has to be re-entered.
@@ -209,6 +222,25 @@ export function TaskForm({
           </select>
         </div>
       )}
+      <div className="field">
+        <label htmlFor={`${id}-reminder`}>Reminder</label>
+        <select
+          id={`${id}-reminder`}
+          value={reminder}
+          onChange={(event) => setReminder(event.target.value)}
+        >
+          <option value="default">My default time before</option>
+          {REMINDER_OPTIONS.includes(reminder) || ["default", "none"].includes(reminder) ? null : (
+            <option value={reminder}>{reminder} minutes before</option>
+          )}
+          {REMINDER_OPTIONS.map((minutes) => (
+            <option key={minutes} value={minutes}>
+              {minutes} minutes before
+            </option>
+          ))}
+          <option value="none">No reminder</option>
+        </select>
+      </div>
       <div className="field">
         <label htmlFor={`${id}-description`}>Notes (optional)</label>
         <textarea

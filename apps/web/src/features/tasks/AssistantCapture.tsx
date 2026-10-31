@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useRef, useState } from "react";
+import { Modal } from "@/components/Modal";
 import {
   createTask,
   errorMessage,
@@ -23,7 +24,7 @@ export function AssistantCapture({ timeZone, onCreated }: Props) {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [note, setNote] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const [manual, setManual] = useState<TaskCreate | null>(null);
+  const [manual, setManual] = useState<Partial<TaskCreate> | null>(null);
   const nextKey = useRef(0);
 
   async function handleSubmit(event: FormEvent) {
@@ -42,7 +43,6 @@ export function AssistantCapture({ timeZone, onCreated }: Props) {
         result.note ??
           (result.drafts.length === 0 ? "I did not find a task in that. Try rewording it." : null),
       );
-      if (result.drafts.length > 0) setText("");
     } catch (error) {
       setFailure(errorMessage(error));
       setManual({ title: message.slice(0, FALLBACK_TITLE_LENGTH), priority: "medium" });
@@ -53,6 +53,13 @@ export function AssistantCapture({ timeZone, onCreated }: Props) {
 
   function remove(key: number) {
     setItems((list) => list.filter((item) => item.key !== key));
+  }
+
+  function saved(key: number, task: Task) {
+    onCreated(task);
+    remove(key);
+    // The message has done its job once something from it is saved.
+    setText("");
   }
 
   return (
@@ -85,19 +92,19 @@ export function AssistantCapture({ timeZone, onCreated }: Props) {
         {working ? "Yadi is reading your message…" : note}
       </p>
 
-      {failure && (
-        <p className="message message-error" role="alert">
-          {failure}
-        </p>
-      )}
       {manual && (
-        <div className="review-item">
-          <h3>Add it yourself</h3>
+        <Modal title="Add it yourself" onClose={() => setManual(null)}>
+          {failure && (
+            <p className="message message-error" role="alert">
+              {failure}
+            </p>
+          )}
           <TaskForm
             initial={manual}
             timeZone={timeZone}
             submitLabel="Save task"
             onDiscard={() => setManual(null)}
+            discardLabel="Close"
             onSubmit={async (values) => {
               onCreated(await createTask(values));
               setManual(null);
@@ -105,42 +112,42 @@ export function AssistantCapture({ timeZone, onCreated }: Props) {
               setText("");
             }}
           />
-        </div>
+        </Modal>
       )}
 
-      {items.length > 0 && <h3>Check what I understood</h3>}
-      {items.map(({ key, draft }, index) => (
-        <div className="review-item" key={key}>
-          <p className="review-label">
-            Task {index + 1}
-            {draft.confidence === "low" && " · I am unsure about this one"}
-          </p>
-          {draft.duePhrase && (
-            <p className="hint">
-              You said &ldquo;{draft.duePhrase}&rdquo;
-              {draft.dueAt && `, which I read as ${formatDateTime(draft.dueAt, timeZone)}`}.
-            </p>
-          )}
-          {draft.questions.length > 0 && (
-            <ul className="questions">
-              {draft.questions.map((question) => (
-                <li key={`${question.field}-${question.question}`}>{question.question}</li>
-              ))}
-            </ul>
-          )}
-          <TaskForm
-            initial={draft}
-            timeZone={timeZone}
-            submitLabel="Save task"
-            discardLabel="Discard"
-            onDiscard={() => remove(key)}
-            onSubmit={async (values) => {
-              onCreated(await createTask(values));
-              remove(key);
-            }}
-          />
-        </div>
-      ))}
+      {items.length > 0 && (
+        <Modal title="Check what I understood" onClose={() => setItems([])}>
+          {items.map(({ key, draft }, index) => (
+            <div className="review-item" key={key}>
+              <p className="review-label">
+                Task {index + 1}
+                {draft.confidence === "low" && " · I am unsure about this one"}
+              </p>
+              {draft.duePhrase && (
+                <p className="hint">
+                  You said &ldquo;{draft.duePhrase}&rdquo;
+                  {draft.dueAt && `, which I read as ${formatDateTime(draft.dueAt, timeZone)}`}.
+                </p>
+              )}
+              {draft.questions.length > 0 && (
+                <ul className="questions">
+                  {draft.questions.map((question) => (
+                    <li key={`${question.field}-${question.question}`}>{question.question}</li>
+                  ))}
+                </ul>
+              )}
+              <TaskForm
+                initial={draft}
+                timeZone={timeZone}
+                submitLabel="Save task"
+                discardLabel="Discard"
+                onDiscard={() => remove(key)}
+                onSubmit={async (values) => saved(key, await createTask(values))}
+              />
+            </div>
+          ))}
+        </Modal>
+      )}
     </section>
   );
 }

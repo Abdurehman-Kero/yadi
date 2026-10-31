@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUnreadCount } from "@/features/notifications/useUnreadCount";
 
 const LINKS = [
   {
@@ -19,11 +20,17 @@ const LINKS = [
     label: "Tasks",
     icon: "M9 6h11M9 12h11M9 18h11M4 6l1 1 1.5-2M4 12l1 1 1.5-2M4 18l1 1 1.5-2",
   },
+  {
+    href: "/notifications",
+    label: "Notifications",
+    icon: "M6 9a6 6 0 1 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9Zm4 10a2 2 0 0 0 4 0",
+  },
   { href: "/settings", label: "Settings", icon: "M4 7h9m4 0h3M4 17h3m4 0h9M15 5v4M9 15v4" },
 ];
 
 export function NavLinks() {
   const pathname = usePathname();
+  const unread = useUnreadCount();
   return (
     <ul className="nav-links">
       {LINKS.map((link) => (
@@ -46,6 +53,12 @@ export function NavLinks() {
               <path d={link.icon} />
             </svg>
             {link.label}
+            {link.href === "/notifications" && unread > 0 && (
+              <span className="nav-count">
+                {unread}
+                <span className="visually-hidden"> unread</span>
+              </span>
+            )}
           </Link>
         </li>
       ))}

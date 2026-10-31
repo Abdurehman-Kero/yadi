@@ -7,7 +7,10 @@ const env = {
   DEV_IDENTITY_ENABLED: "true",
   DATABASE_URL: "postgresql+psycopg://yadi:yadi_dev_password@127.0.0.1:5433/yadi_e2e",
   PYTHONPATH: "src",
-  GEMINI_API_KEY: "", // Browser tests must never call the real AI or spend money.
+  // Browser tests must never reach real services, whatever is in .env.
+  GEMINI_API_KEY: "",
+  VAPID_PUBLIC_KEY: "",
+  VAPID_PRIVATE_KEY: "",
 };
 
 // Uses its own database, ports and build folder, so dev data and dev servers are untouched.
@@ -26,6 +29,13 @@ export default defineConfig({
       env,
       reuseExistingServer: false,
       timeout: 120_000,
+    },
+    {
+      // A real worker: browser tests see reminders exactly as a user would.
+      command: "python -m uv run python -m yadi.worker",
+      cwd: "../../services/api",
+      env: { ...env, WORKER_POLL_SECONDS: "1" },
+      reuseExistingServer: false,
     },
     {
       command: `npx next dev -p ${WEB_PORT}`,

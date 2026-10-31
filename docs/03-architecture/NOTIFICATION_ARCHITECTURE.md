@@ -17,10 +17,10 @@ processing with expired lease ──recovery──► scheduled
 Loop every ~5 s: `SELECT … WHERE state='scheduled' AND next_attempt_at<=now() ORDER BY next_attempt_at FOR UPDATE SKIP LOCKED LIMIT n`; set `processing`, `locked_until=now()+60s`; deliver; write `reminder_attempts`; update state. A separate sweep returns expired-lease rows to `scheduled`. Safe with multiple workers and after restarts.
 
 ## Idempotency
-`idempotency_key = hash(task_id, kind, remind_at)` unique → recomputation never creates duplicates. Delivery includes the reminder id as the notification tag so a retry replaces rather than duplicates.
+`idempotency_key = hash(task_id, kind, anchor kind, anchor time, lead time)` unique → recomputation never creates duplicates. Delivery includes the reminder id as the notification tag so a retry replaces rather than duplicates.
 
 ## Retries
-Exponential backoff 30 s, 2 m, 10 m; max 3 attempts. Reminders more than a grace window late (default 30 min past due and task not yet started) are marked `delivered_late` in attempt outcome and still sent once; those past the task's end are cancelled.
+Exponential backoff 30 s, 2 m, 10 m; 4 attempts in total. A reminder delivered after its anchor time is still sent once, with wording that says it is late (M05 decision: nothing is dropped silently). Only in-app delivery is retried; push is best-effort and recorded.
 
 ## Timezone/DST
 `remind_at` is an absolute UTC instant derived from the task time in the user's zone at creation; if the task time changes, reminders are recomputed. Recurring tasks expand per local wall-clock time.

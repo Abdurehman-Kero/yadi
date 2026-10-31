@@ -18,3 +18,6 @@
 
 ## 2026-10-30/31 (M04)
 - Owner skipped M03's test (D-013) and asked for a redesign. Built engine, schedule API, Today and Schedule screens, new design. First live Gemini call succeeded. Screenshots exposed a misleading overdue message, fixed. M02 to M04 uncommitted.
+
+## 2026-10-31 (M05)
+- Owner approved M04, moved sign-in out of M05, asked for modal forms. Built reminders, worker, notifications, browser alerts and modals. Tests caught a push-key naming bug and a focus-return bug. Real alerts untested. M05 uncommitted.

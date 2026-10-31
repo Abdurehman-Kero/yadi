@@ -11,6 +11,7 @@ from sqlalchemy import delete, select, tuple_
 from sqlalchemy.orm import Session
 
 from yadi.core.errors import AppError
+from yadi.modules.reminders.sync import sync_reminders
 from yadi.modules.scheduling.models import ScheduleBlock
 from yadi.modules.tasks.lifecycle import (
     TaskPriority,
@@ -63,11 +64,14 @@ def create_task(session: Session, user_id: uuid.UUID, data: TaskCreate) -> Task:
         fixed_start_at=data.fixed_start_at,
         fixed_end_at=data.fixed_end_at,
         preferred_period=data.preferred_period,
+        reminder_enabled=data.reminder_enabled,
+        reminder_minutes_before=data.reminder_minutes_before,
     )
     task.status = _details_status(task).value
     session.add(task)
     session.flush()
     _record(session, task, "created", {})
+    sync_reminders(session, user_id, [task], datetime.now(UTC))
     session.commit()
     return task
 
@@ -102,6 +106,7 @@ def update_task(session: Session, user_id: uuid.UUID, task_id: uuid.UUID, data: 
         task.status = _details_status(task).value
     task.updated_at = datetime.now(UTC)
     _record(session, task, "updated", {"changed": sorted(changed)})
+    sync_reminders(session, user_id, [task], task.updated_at)
     session.commit()
     return task
 
@@ -123,6 +128,7 @@ def _transition(
             )
         )
     _record(session, task, event_type, {"from": current.value, "to": target.value})
+    sync_reminders(session, user_id, [task], task.updated_at)
     session.commit()
     return task
 

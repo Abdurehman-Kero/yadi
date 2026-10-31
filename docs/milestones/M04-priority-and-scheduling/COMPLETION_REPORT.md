@@ -1,6 +1,6 @@
 # M04 Completion Report
 
-**Status: BUILT AND VERIFIED, awaiting owner review.** (2026-10-31 UTC). Not committed: the owner makes commits.
+**Status: COMPLETE.** Owner approved 2026-10-31; committed in ace8bb6.
 
 ## Delivered
 - Migration 0004: fixed times and preferred period on tasks; `task_dependencies`, `schedule_blocks`, `schedule_runs`.

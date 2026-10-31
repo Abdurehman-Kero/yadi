@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from yadi.core.errors import AppError
 from yadi.modules.preferences.router import UserPreferences
+from yadi.modules.reminders.sync import sync_reminders
 from yadi.modules.scheduling import engine
 from yadi.modules.scheduling.models import ScheduleBlock, ScheduleRun, TaskDependency
 from yadi.modules.scheduling.schemas import (
@@ -169,6 +170,7 @@ def generate(session: Session, user_id: uuid.UUID, *, days: int, now: datetime) 
     for task in tasks:
         _set_scheduled_status(session, task, placed=task.id not in unscheduled_ids)
 
+    sync_reminders(session, user_id, tasks, now)
     session.add(
         ScheduleRun(
             user_id=user_id,
@@ -307,6 +309,7 @@ def update_block(
             payload={"start": moved.start.isoformat(), "end": moved.end.isoformat()},
         )
     )
+    sync_reminders(session, user_id, [session.get_one(Task, block.task_id)], datetime.now(UTC))
     session.commit()
 
 

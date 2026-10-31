@@ -82,7 +82,7 @@ export function SettingsScreen() {
   // Browsers can omit "UTC" from their list, and the saved zone must always be selectable.
   const options = [...new Set(["UTC", form.timezone, ...zones])];
   const labels: Record<(typeof NUMBER_FIELDS)[number], string> = {
-    defaultReminderMinutes: "Default reminder, minutes before (used once reminders arrive)",
+    defaultReminderMinutes: "Default reminder, minutes before",
     bufferMinutes: "Gap between tasks, minutes",
   };
 

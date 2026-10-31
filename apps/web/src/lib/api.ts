@@ -16,6 +16,10 @@ export type Schedule = components["schemas"]["ScheduleOut"];
 export type ScheduleBlock = components["schemas"]["BlockOut"];
 export type BlockUpdate = components["schemas"]["BlockUpdate"];
 
+export type NotificationList = components["schemas"]["NotificationList"];
+export type ServiceStatus = components["schemas"]["ServiceStatus"];
+export type PushSubscriptionInput = components["schemas"]["SubscriptionRequest"];
+
 export type ErrorDetail = { field: string; issue: string };
 
 export class ApiError extends Error {
@@ -40,6 +44,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new ApiError("NETWORK", UNREACHABLE);
   }
+  if (response.status === 204) return undefined as T;
   // A proxy failure while the API is down has no JSON body, so parsing must not be assumed.
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -75,6 +80,18 @@ export const getSchedule = () => request<Schedule>("/schedule");
 export const generateSchedule = () => send<Schedule>("POST", "/schedule/generate", { days: 7 });
 export const updateBlock = (id: string, data: BlockUpdate) =>
   send<ScheduleBlock>("PATCH", `/schedule/blocks/${id}`, data);
+
+export const listNotifications = () => request<NotificationList>("/notifications");
+export const markNotificationRead = (id: string) =>
+  send<unknown>("POST", `/notifications/${id}/read`);
+export const markAllNotificationsRead = () => send<void>("POST", "/notifications/read-all");
+export const snoozeReminder = (id: string, minutes: number) =>
+  send<unknown>("POST", `/reminders/${id}/snooze`, { minutes });
+export const getServiceStatus = () => request<ServiceStatus>("/reminders/service-status");
+export const savePushSubscription = (data: PushSubscriptionInput) =>
+  send<void>("POST", "/push/subscriptions", data);
+export const removePushSubscription = (endpoint: string) =>
+  send<void>("POST", "/push/unsubscribe", { endpoint });
 
 export const getPreferences = () => request<Preferences>("/preferences");
 export const savePreferences = (data: Preferences) =>

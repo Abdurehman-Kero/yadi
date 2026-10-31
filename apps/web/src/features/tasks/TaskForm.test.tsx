@@ -39,6 +39,20 @@ describe("TaskForm", () => {
       fixedStartAt: null,
       fixedEndAt: null,
       preferredPeriod: null,
+      reminderEnabled: true,
+      reminderMinutesBefore: null,
+    });
+  });
+
+  it("sends the chosen reminder", async () => {
+    const onSubmit = setup();
+    typeTitle("Report");
+    fireEvent.change(screen.getByLabelText("Reminder"), { target: { value: "none" } });
+    submit();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      reminderEnabled: false,
+      reminderMinutesBefore: null,
     });
   });
 

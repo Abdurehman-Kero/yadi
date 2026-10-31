@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Integer, Text, Uuid, func
+from sqlalchemy import Boolean, DateTime, Integer, Text, Uuid, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,6 +23,8 @@ class Task(Base):
     fixed_start_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fixed_end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     preferred_period: Mapped[str | None] = mapped_column(Text)
+    reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    reminder_minutes_before: Mapped[int | None] = mapped_column(Integer)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

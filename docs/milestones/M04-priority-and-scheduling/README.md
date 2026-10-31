@@ -2,7 +2,7 @@
 
 **Purpose:** Yadi builds a realistic plan around fixed commitments, working hours and deadlines, explains it, and says honestly what does not fit. This milestone also delivers the Today dashboard and a redesign of the whole interface, at the owner's request.
 
-**Status:** Built and verified, awaiting owner review. See COMPLETION_REPORT.md.
+**Status:** Complete. See COMPLETION_REPORT.md.
 
 **Exception (D-013):** the owner chose to start M04 before M03's live accuracy test. M03 remains open; its test is still owed before the MVP is called complete.
 

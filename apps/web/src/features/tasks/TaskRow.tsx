@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Modal } from "@/components/Modal";
 import {
   errorMessage,
   listTaskEvents,
@@ -96,69 +97,75 @@ export function TaskRow({
           {overdue && <span className="overdue">Overdue</span>}
           {task.estimatedMinutes !== null && <span>{task.estimatedMinutes} min</span>}
           {task.preferredPeriod && <span>Prefers {task.preferredPeriod}</span>}
+          {!task.reminderEnabled && <span>No reminder</span>}
         </p>
         {task.description && <p className="task-notes">{task.description}</p>}
       </div>
 
-      {confirming ? (
-        <div className="actions" role="group" aria-label={`Confirm cancelling ${task.title}`}>
-          <span>Cancel this task? This cannot be undone.</span>
-          <button
-            type="button"
-            className="button-danger"
-            disabled={busy}
-            onClick={() => {
-              setConfirming(false);
-              onCancel();
-            }}
-          >
-            Yes, cancel task
+      <div className="actions">
+        {!finished && task.status !== "in_progress" && (
+          <button type="button" disabled={busy} onClick={onStart}>
+            Start<span className="visually-hidden"> {task.title}</span>
           </button>
-          <button type="button" onClick={() => setConfirming(false)}>
-            Keep task
+        )}
+        {!finished && (
+          <button type="button" disabled={busy} onClick={onComplete}>
+            Complete<span className="visually-hidden"> {task.title}</span>
           </button>
-        </div>
-      ) : (
-        <div className="actions">
-          {!finished && task.status !== "in_progress" && (
-            <button type="button" disabled={busy} onClick={onStart}>
-              Start<span className="visually-hidden"> {task.title}</span>
-            </button>
-          )}
-          {!finished && (
-            <button type="button" disabled={busy} onClick={onComplete}>
-              Complete<span className="visually-hidden"> {task.title}</span>
-            </button>
-          )}
-          {task.status === "completed" && (
-            <button type="button" disabled={busy} onClick={onReopen}>
-              Reopen<span className="visually-hidden"> {task.title}</span>
-            </button>
-          )}
-          {!finished && (
-            <>
-              <button type="button" disabled={busy} onClick={onEdit}>
-                Edit<span className="visually-hidden"> {task.title}</span>
-              </button>
-              <button
-                type="button"
-                className="button-quiet"
-                disabled={busy}
-                onClick={() => setConfirming(true)}
-              >
-                Cancel task<span className="visually-hidden"> {task.title}</span>
-              </button>
-            </>
-          )}
-          <button
-            type="button"
-            className="button-quiet"
-            aria-expanded={events !== null}
-            onClick={toggleHistory}
-          >
-            History<span className="visually-hidden"> of {task.title}</span>
+        )}
+        {task.status === "completed" && (
+          <button type="button" disabled={busy} onClick={onReopen}>
+            Reopen<span className="visually-hidden"> {task.title}</span>
           </button>
-        </div>
+        )}
+        {!finished && (
+          <>
+            <button type="button" disabled={busy} onClick={onEdit}>
+              Edit<span className="visually-hidden"> {task.title}</span>
+            </button>
+            <button
+              type="button"
+              className="button-quiet"
+              disabled={busy}
+              onClick={() => setConfirming(true)}
+            >
+              Cancel task<span className="visually-hidden"> {task.title}</span>
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          className="button-quiet"
+          aria-expanded={events !== null}
+          onClick={toggleHistory}
+        >
+          History<span className="visually-hidden"> of {task.title}</span>
+        </button>
+      </div>
+
+      {confirming && (
+        <Modal title="Cancel this task?" onClose={() => setConfirming(false)}>
+          <p>
+            &ldquo;{task.title}&rdquo; will move to Cancelled. This cannot be undone, and its
+            reminders will stop.
+          </p>
+          <div className="actions">
+            <button
+              type="button"
+              className="button-danger"
+              disabled={busy}
+              onClick={() => {
+                setConfirming(false);
+                onCancel();
+              }}
+            >
+              Yes, cancel task
+            </button>
+            <button type="button" onClick={() => setConfirming(false)}>
+              Keep task
+            </button>
+          </div>
+        </Modal>
       )}
 
       {historyError && (

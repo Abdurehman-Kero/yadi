@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Modal } from "@/components/Modal";
 import {
   completeTask,
+  createTask,
   errorMessage,
   generateSchedule,
   getPreferences,
@@ -16,6 +18,7 @@ import {
 import { BlockRow } from "@/features/schedule/BlockRow";
 import { ScheduleNotices } from "@/features/schedule/ScheduleNotices";
 import { AssistantCapture } from "@/features/tasks/AssistantCapture";
+import { TaskForm } from "@/features/tasks/TaskForm";
 import { dayKey, formatDateTime, formatDay, formatTime } from "@/lib/time";
 
 type Data = { timeZone: string; schedule: Schedule; tasks: Task[]; now: number };
@@ -29,6 +32,7 @@ export function TodayScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -111,15 +115,37 @@ export function TodayScreen() {
           <h1>Today</h1>
           <p className="page-subtitle">{formatDay(new Date(now).toISOString(), timeZone)}</p>
         </div>
-        <button
-          type="button"
-          className="button-primary"
-          disabled={working}
-          onClick={() => act(generateSchedule, "Plan updated.")}
-        >
-          {working ? "Planning…" : schedule.generatedAt ? "Replan" : "Plan my week"}
-        </button>
+        <div className="actions">
+          <button type="button" onClick={() => setAdding(true)}>
+            New task
+          </button>
+          <button
+            type="button"
+            className="button-primary"
+            disabled={working}
+            onClick={() => act(generateSchedule, "Plan updated.")}
+          >
+            {working ? "Planning…" : schedule.generatedAt ? "Replan" : "Plan my week"}
+          </button>
+        </div>
       </header>
+
+      {adding && (
+        <Modal title="New task" onClose={() => setAdding(false)}>
+          <TaskForm
+            timeZone={timeZone}
+            submitLabel="Add task"
+            onDiscard={() => setAdding(false)}
+            discardLabel="Close"
+            onSubmit={async (values) => {
+              const created = await createTask(values);
+              setAdding(false);
+              setNotice(`Added "${created.title}".`);
+              reload();
+            }}
+          />
+        </Modal>
+      )}
 
       <p className="live-region" role="status">
         {notice}

@@ -1,6 +1,6 @@
 # Data Model (initial, MVP)
 
-Status: Built through migration 0004 (users, user_preferences, tasks, task_events, ai_usage, task_dependencies, schedule_blocks, schedule_runs). Other tables and columns below arrive with the milestone that uses them.
+Status: Built through migration 0005 (adds reminders, reminder_attempts, notifications, push_subscriptions, worker_heartbeat, and reminder settings on tasks). Other tables and columns below arrive with the milestone that uses them.
 
 ## Entities
 | Table | Key columns | Notes |

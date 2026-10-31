@@ -21,6 +21,7 @@ from yadi.modules.tasks.lifecycle import TaskPriority, TaskStatus
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Description = Annotated[str, StringConstraints(max_length=5000)]
 Minutes = Annotated[int, Field(ge=1, le=1440)]
+ReminderMinutes = Annotated[int, Field(ge=0, le=10080)]
 # Responses always use UTC, whatever offset the client or database session used.
 PreferredPeriod = Literal["morning", "afternoon", "evening"]
 UtcDatetime = Annotated[datetime, AfterValidator(lambda value: value.astimezone(UTC))]
@@ -46,6 +47,8 @@ class TaskCreate(ApiModel):
     fixed_start_at: AwareDatetime | None = None
     fixed_end_at: AwareDatetime | None = None
     preferred_period: PreferredPeriod | None = None
+    reminder_enabled: bool = True
+    reminder_minutes_before: ReminderMinutes | None = None
 
     @model_validator(mode="after")
     def _fixed_range(self) -> Self:
@@ -64,8 +67,10 @@ class TaskUpdate(ApiModel):
     fixed_start_at: AwareDatetime | None = None
     fixed_end_at: AwareDatetime | None = None
     preferred_period: PreferredPeriod | None = None
+    reminder_enabled: bool | None = None
+    reminder_minutes_before: ReminderMinutes | None = None
 
-    @field_validator("title", "priority")
+    @field_validator("title", "priority", "reminder_enabled")
     @classmethod
     def _not_null(cls, value: Any) -> Any:
         if value is None:
@@ -86,6 +91,8 @@ class TaskOut(ApiModel):
     fixed_start_at: UtcDatetime | None
     fixed_end_at: UtcDatetime | None
     preferred_period: PreferredPeriod | None
+    reminder_enabled: bool
+    reminder_minutes_before: int | None
     completed_at: UtcDatetime | None
     created_at: UtcDatetime
     updated_at: UtcDatetime
