@@ -16,6 +16,23 @@ async function addTask(page: Page, title: string) {
 
 const dialog = (page: Page) => page.getByRole("dialog");
 
+/** Opens a task row's overflow menu, for the actions kept out of the way. */
+async function openMenu(page: Page, title: string) {
+  await row(page, title).locator("summary").click();
+}
+
+/** Clicks through the day strip until the block for this task is on screen. */
+async function showDayWith(page: Page, title: string) {
+  const tabs = page.getByRole("group", { name: "Choose a day" }).getByRole("button");
+  await expect(tabs.first()).toBeVisible();
+  for (let i = 0; i < (await tabs.count()); i += 1) {
+    await tabs.nth(i).click();
+    await expect(tabs.nth(i)).toHaveAttribute("aria-pressed", "true");
+    if (await row(page, title).count()) return;
+  }
+  throw new Error(`No day shows ${title}`);
+}
+
 const row = (page: Page, title: string) =>
   page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: title }) });
 
@@ -27,20 +44,20 @@ test.beforeEach(async ({ page }) => {
 test("a task survives a refresh and moves through its whole life", async ({ page }) => {
   const title = unique();
   await addTask(page, title);
-  await expect(row(page, title).getByText("Inbox")).toBeVisible();
+  await expect(row(page, title).getByText("Needs details")).toBeVisible();
 
   await page.reload();
   await expect(row(page, title)).toBeVisible();
 
+  await openMenu(page, title);
   await row(page, title).getByRole("button", { name: /^Edit/ }).click();
-  await page
+  await dialog(page)
     .getByLabel(/Estimate/)
-    .last()
     .fill("45");
-  await page.getByLabel("Due (optional)").last().fill("2035-06-01T09:30");
+  await dialog(page).getByLabel("Due (optional)").fill("2035-06-01T09:30");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(row(page, title).getByText("45 min")).toBeVisible();
-  await expect(row(page, title).getByText("Planned")).toBeVisible();
+  await expect(row(page, title).getByText("Ready to plan")).toBeVisible();
 
   await row(page, title)
     .getByRole("button", { name: /^Start/ })
@@ -54,6 +71,7 @@ test("a task survives a refresh and moves through its whole life", async ({ page
   await page.getByRole("button", { name: "Completed", exact: true }).click();
   await expect(row(page, title)).toBeVisible();
 
+  await openMenu(page, title);
   await row(page, title)
     .getByRole("button", { name: /^History/ })
     .click();
@@ -65,18 +83,20 @@ test("a task survives a refresh and moves through its whole life", async ({ page
     .getByRole("button", { name: /^Reopen/ })
     .click();
   await page.getByRole("button", { name: "Active", exact: true }).click();
-  await expect(row(page, title).getByText("Planned")).toBeVisible();
+  await expect(row(page, title).getByText("Ready to plan")).toBeVisible();
 });
 
 test("cancelling asks first, and the task stays on record", async ({ page }) => {
   const title = unique();
   await addTask(page, title);
+  await openMenu(page, title);
   await row(page, title)
     .getByRole("button", { name: /^Cancel task/ })
     .click();
   await dialog(page).getByRole("button", { name: "Keep task" }).click();
-  await expect(row(page, title).getByText("Inbox")).toBeVisible();
+  await expect(row(page, title).getByText("Needs details")).toBeVisible();
 
+  await openMenu(page, title);
   await row(page, title)
     .getByRole("button", { name: /^Cancel task/ })
     .click();
@@ -181,10 +201,10 @@ test("a draft is reviewed and corrected before it is saved", async ({ page }) =>
   const draftTitle = dialog(page).getByLabel("Title", { exact: true });
   await draftTitle.fill(title);
   await page.getByRole("button", { name: "Save task" }).click();
-  await expect(page.getByRole("status").filter({ hasText: `Added "${title}"` })).toBeVisible();
+  await expect(page.getByRole("log")).toContainText(`Added "${title}"`);
   await page.goto("/tasks");
   await expect(row(page, title).getByText("120 min")).toBeVisible();
-  await expect(row(page, title).getByText("Planned")).toBeVisible();
+  await expect(row(page, title).getByText("Ready to plan")).toBeVisible();
 });
 
 test("Yadi plans around a fixed event, explains it, and reports what does not fit", async ({
@@ -221,12 +241,19 @@ test("Yadi plans around a fixed event, explains it, and reports what does not fi
   await page.getByRole("button", { name: /Plan my week|Replan/ }).click();
   await expect(page.getByRole("status").filter({ hasText: "Plan updated" })).toBeVisible();
 
-  const fixedBlock = row(page, fixedTitle);
-  await expect(fixedBlock.getByText("Fixed", { exact: true })).toBeVisible();
-  await expect(fixedBlock.getByRole("button", { name: /^Move/ })).toHaveCount(0);
+  await showDayWith(page, fixedTitle);
+  await expect(row(page, fixedTitle).getByText(/Fixed/)).toBeVisible();
+  await row(page, fixedTitle).getByRole("button").click();
+  await expect(dialog(page).getByText(/never moves it/)).toBeVisible();
+  await expect(dialog(page).getByRole("button", { name: "Save time" })).toHaveCount(0);
+  await dialog(page).getByRole("button", { name: "Close" }).click();
+
+  await showDayWith(page, flexibleTitle);
   const planned = row(page, flexibleTitle);
-  await expect(planned.getByText("Flexible")).toBeVisible();
-  await expect(planned.getByText(/No deadline/)).toBeVisible();
+  await expect(planned.getByText(/Flexible/)).toBeVisible();
+  await planned.getByRole("button").click();
+  await expect(dialog(page).getByText(/No deadline/)).toBeVisible();
+  await dialog(page).getByRole("button", { name: "Close" }).click();
   const missing = page.getByRole("listitem").filter({ hasText: hugeTitle });
   await expect(missing.getByText(/do not fit before the deadline/)).toBeVisible();
   await expect(missing.getByText(/Move the deadline later/)).toBeVisible();
@@ -234,7 +261,8 @@ test("Yadi plans around a fixed event, explains it, and reports what does not fi
   await page.goto("/");
   await expect(page.getByText("Next up")).toBeVisible();
   await page.goto("/schedule");
-  await planned.getByRole("button", { name: /^Move/ }).click();
+  await showDayWith(page, flexibleTitle);
+  await planned.getByRole("button").click();
   const move = dialog(page);
   await move.getByLabel("New start").fill(`${day}T03:00`);
   await move.getByLabel("New end").fill(`${day}T04:00`);
@@ -244,11 +272,12 @@ test("Yadi plans around a fixed event, explains it, and reports what does not fi
   await move.getByLabel("New start").fill(`${day}T15:00`);
   await move.getByLabel("New end").fill(`${day}T16:00`);
   await move.getByRole("button", { name: "Save time" }).click();
-  await expect(planned.getByText("Kept in place")).toBeVisible();
+  await expect(planned.getByText(/Kept in place/)).toBeVisible();
 
   await page.getByRole("button", { name: "Replan" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Plan updated" })).toBeVisible();
-  await expect(planned.getByText("Kept in place")).toBeVisible();
+  await showDayWith(page, flexibleTitle);
+  await expect(planned.getByText(/Kept in place/)).toBeVisible();
 });
 
 test("a message changes real data through the real API, and asks before cancelling", async ({
@@ -307,6 +336,54 @@ test("a message changes real data through the real API, and asks before cancelli
   const results = await new AxeBuilder({ page }).analyze();
   const serious = results.violations.filter((v) => ["serious", "critical"].includes(v.impact!));
   expect(serious.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+});
+
+test("Today offers the device's timezone when times are still in UTC", async ({ page }) => {
+  await page.goto("/settings");
+  await page.getByLabel("Timezone").selectOption("UTC");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Settings saved." })).toBeVisible();
+  const zone = await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+  test.skip(zone === "UTC", "This machine is itself on UTC.");
+  await page.goto("/");
+  await page.getByRole("button", { name: `Use ${zone}` }).click();
+  await expect(page.getByRole("button", { name: `Use ${zone}` })).toHaveCount(0);
+  await page.goto("/settings");
+  await expect(page.getByLabel("Timezone")).toHaveValue(zone);
+  await page.getByLabel("Timezone").selectOption("UTC");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Settings saved." })).toBeVisible();
+});
+
+test("Enter sends a message and Shift+Enter makes a new line", async ({ page }) => {
+  let sent = "";
+  await page.route("**/api/v1/assistant/message", async (route) => {
+    sent = route.request().postDataJSON().text;
+    await route.fulfill({
+      json: { kind: "answer", message: "Noted.", options: [], taskIds: [] },
+    });
+  });
+  await page.goto("/");
+  const box = page.getByLabel("Your message");
+  await box.focus();
+  await page.keyboard.type("line one");
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.type("line two");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("log")).toContainText("Noted.");
+  expect(sent).toBe("line one\nline two");
+});
+
+test("no page scrolls sideways on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  for (const path of ["/", "/schedule", "/tasks", "/notifications", "/settings"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, path).toBeLessThanOrEqual(0);
+  }
 });
 
 test("a modal traps focus, closes with Escape and returns focus", async ({ page }) => {

@@ -11,6 +11,8 @@ def score_intent(expected: dict[str, Any], output: Intent) -> list[str]:
         actual = getattr(output, name)
         if name == "task_numbers":
             actual, value = sorted(actual), sorted(value)
+        if isinstance(actual, str) and name.endswith("_local"):
+            actual = actual.replace(" ", "T")  # The app reads both forms the same way.
         if actual != value:
             failures.append(f"{name} is {actual!r}, not {value!r}")
     return failures

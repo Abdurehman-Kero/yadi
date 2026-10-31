@@ -24,7 +24,7 @@ Run all three processes from the root README, after `python -m uv run alembic up
 9. "I have a dentist visit on Monday at 9"
 
 ## F. Expected results
-These are expectations: **the real model has not been tried on them.**
+The real model passed a matching evaluation, but these exact steps have not been run by hand.
 - 1, 7: answers from your own plan. 2: "Moved ..."; the plan updates.
 - 3: asks which report. 4: that one is completed; the other is untouched.
 - 5: No changes nothing; Yes cancels. 6: an Unavailable block appears and work moves around it.
@@ -38,7 +38,7 @@ These are expectations: **the real model has not been tried on them.**
 - Accuracy, using your quota, from `services/api` in Git Bash: `PYTHONPATH="src;." python -m uv run python scripts/run_ai_eval.py --yes --intents`
 
 ## H. Known limitations
-See COMPLETION_REPORT.md: one action per message, conversation lost on reload, and real-model accuracy unmeasured.
+See COMPLETION_REPORT.md: one action per message, conversation lost on reload, free-tier rate limits, and accuracy measured only on made-up messages.
 
 ## I. Presentation script
 "You just tell Yadi what changed. The AI only works out what you mean. Tested rules decide what is allowed, it asks when unsure, and it checks with you before anything hard to undo. The reply tells you what actually happened, because it is written after the change is made."

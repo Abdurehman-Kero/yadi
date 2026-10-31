@@ -2,7 +2,6 @@
 
 import { type FormEvent, useId, useState } from "react";
 import { ApiError, errorMessage, type Task, type TaskCreate, type TaskPriority } from "@/lib/api";
-
 import { utcToWallTime, wallTimeToUtc } from "@/lib/time";
 
 export const PRIORITIES: { value: TaskPriority; label: string }[] = [
@@ -27,7 +26,7 @@ type Props = {
 export function TaskForm({
   task,
   initial,
-  discardLabel = "Discard changes",
+  discardLabel = "Discard",
   timeZone,
   submitLabel,
   onSubmit,
@@ -118,6 +117,9 @@ export function TaskForm({
         {fieldErrors[field]}
       </p>
     );
+  const hasExtras = Boolean(
+    period || description || reminder !== "default" || fieldErrors.description,
+  );
 
   return (
     <form className="task-form" onSubmit={handleSubmit} noValidate>
@@ -127,54 +129,14 @@ export function TaskForm({
           id={`${id}-title`}
           value={title}
           maxLength={200}
+          placeholder="What needs doing?"
           onChange={(event) => setTitle(event.target.value)}
           aria-invalid={Boolean(fieldErrors.title)}
           aria-describedby={describedBy("title")}
         />
         {fieldError("title")}
       </div>
-      <div className="field-row">
-        <div className="field">
-          <label htmlFor={`${id}-due`}>Due (optional)</label>
-          <input
-            id={`${id}-due`}
-            type="datetime-local"
-            value={due}
-            onChange={(event) => setDue(event.target.value)}
-            aria-invalid={Boolean(fieldErrors.dueAt)}
-            aria-describedby={describedBy("dueAt")}
-          />
-          {fieldError("dueAt")}
-        </div>
-        <div className="field">
-          <label htmlFor={`${id}-minutes`}>Estimate in minutes (optional)</label>
-          <input
-            id={`${id}-minutes`}
-            type="number"
-            min={1}
-            max={1440}
-            value={minutes}
-            onChange={(event) => setMinutes(event.target.value)}
-            aria-invalid={Boolean(fieldErrors.estimatedMinutes)}
-            aria-describedby={describedBy("estimatedMinutes")}
-          />
-          {fieldError("estimatedMinutes")}
-        </div>
-        <div className="field">
-          <label htmlFor={`${id}-priority`}>Priority</label>
-          <select
-            id={`${id}-priority`}
-            value={priority}
-            onChange={(event) => setPriority(event.target.value as TaskPriority)}
-          >
-            {PRIORITIES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+
       <label className="check-field">
         <input
           type="checkbox"
@@ -183,6 +145,7 @@ export function TaskForm({
         />
         This happens at a fixed time, like a meeting
       </label>
+
       {isFixed ? (
         <div className="field-row">
           <div className="field">
@@ -208,66 +171,120 @@ export function TaskForm({
           </div>
         </div>
       ) : (
-        <div className="field">
-          <label htmlFor={`${id}-period`}>Preferred time of day (optional)</label>
-          <select
-            id={`${id}-period`}
-            value={period}
-            onChange={(event) => setPeriod(event.target.value)}
-          >
-            <option value="">Any time</option>
-            <option value="morning">Morning</option>
-            <option value="afternoon">Afternoon</option>
-            <option value="evening">Evening</option>
-          </select>
+        <div className="field-row">
+          <div className="field">
+            <label htmlFor={`${id}-due`}>Due (optional)</label>
+            <input
+              id={`${id}-due`}
+              type="datetime-local"
+              value={due}
+              onChange={(event) => setDue(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.dueAt)}
+              aria-describedby={describedBy("dueAt")}
+            />
+            {fieldError("dueAt")}
+          </div>
+          <div className="field">
+            <label htmlFor={`${id}-minutes`}>Estimate in minutes</label>
+            <input
+              id={`${id}-minutes`}
+              type="number"
+              min={1}
+              max={1440}
+              value={minutes}
+              onChange={(event) => setMinutes(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.estimatedMinutes)}
+              aria-describedby={describedBy("estimatedMinutes")}
+            />
+            {fieldError("estimatedMinutes")}
+            <p className="hint">Yadi needs this to plan it.</p>
+          </div>
         </div>
       )}
-      <div className="field">
-        <label htmlFor={`${id}-reminder`}>Reminder</label>
+
+      <div className="field field-narrow">
+        <label htmlFor={`${id}-priority`}>Priority</label>
         <select
-          id={`${id}-reminder`}
-          value={reminder}
-          onChange={(event) => setReminder(event.target.value)}
+          id={`${id}-priority`}
+          value={priority}
+          onChange={(event) => setPriority(event.target.value as TaskPriority)}
         >
-          <option value="default">My default time before</option>
-          {REMINDER_OPTIONS.includes(reminder) || ["default", "none"].includes(reminder) ? null : (
-            <option value={reminder}>{reminder} minutes before</option>
-          )}
-          {REMINDER_OPTIONS.map((minutes) => (
-            <option key={minutes} value={minutes}>
-              {minutes} minutes before
+          {PRIORITIES.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
-          <option value="none">No reminder</option>
         </select>
       </div>
-      <div className="field">
-        <label htmlFor={`${id}-description`}>Notes (optional)</label>
-        <textarea
-          id={`${id}-description`}
-          rows={2}
-          value={description}
-          maxLength={5000}
-          onChange={(event) => setDescription(event.target.value)}
-          aria-invalid={Boolean(fieldErrors.description)}
-          aria-describedby={describedBy("description")}
-        />
-        {fieldError("description")}
-      </div>
+
+      <details className="more-options" open={hasExtras}>
+        <summary>More options</summary>
+        <div className="task-form">
+          {!isFixed && (
+            <div className="field">
+              <label htmlFor={`${id}-period`}>Preferred time of day</label>
+              <select
+                id={`${id}-period`}
+                value={period}
+                onChange={(event) => setPeriod(event.target.value)}
+              >
+                <option value="">Any time</option>
+                <option value="morning">Morning</option>
+                <option value="afternoon">Afternoon</option>
+                <option value="evening">Evening</option>
+              </select>
+            </div>
+          )}
+          <div className="field">
+            <label htmlFor={`${id}-reminder`}>Reminder</label>
+            <select
+              id={`${id}-reminder`}
+              value={reminder}
+              onChange={(event) => setReminder(event.target.value)}
+            >
+              <option value="default">My default time before</option>
+              {REMINDER_OPTIONS.includes(reminder) ||
+              ["default", "none"].includes(reminder) ? null : (
+                <option value={reminder}>{reminder} minutes before</option>
+              )}
+              {REMINDER_OPTIONS.map((value) => (
+                <option key={value} value={value}>
+                  {value} minutes before
+                </option>
+              ))}
+              <option value="none">No reminder</option>
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor={`${id}-description`}>Notes</label>
+            <textarea
+              id={`${id}-description`}
+              rows={2}
+              value={description}
+              maxLength={5000}
+              onChange={(event) => setDescription(event.target.value)}
+              aria-invalid={Boolean(fieldErrors.description)}
+              aria-describedby={describedBy("description")}
+            />
+            {fieldError("description")}
+          </div>
+        </div>
+      </details>
+
       {formError && (
         <p className="message message-error" role="alert">
           {formError}
         </p>
       )}
-      <div className="actions">
-        <button type="submit" className="button-primary" disabled={saving}>
-          {saving ? "Saving…" : submitLabel}
-        </button>
+      <div className="form-actions">
         {onDiscard && (
           <button type="button" onClick={onDiscard} disabled={saving}>
             {discardLabel}
           </button>
         )}
+        <button type="submit" className="button-primary" disabled={saving}>
+          {saving ? "Saving…" : submitLabel}
+        </button>
       </div>
     </form>
   );

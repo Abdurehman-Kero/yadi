@@ -2,7 +2,7 @@
 
 AI-powered personal assistant for organizing daily life through natural conversation: task capture, realistic scheduling, reliable reminders, and (later) permissioned memory and calendar integration.
 
-**Status:** Working app: tasks, Tell Yadi (Gemini), and a scheduling engine with a Today dashboard. Latest: M06 change-by-chat built and tested with a fake AI. Accuracy tests on the real AI are still owed, and real sign-in is needed before hosting.
+**Status:** Working app: tasks, Tell Yadi (Gemini), and a scheduling engine with a Today dashboard. Latest: change-by-chat evaluated on real Gemini, and a UI/UX redesign. Real sign-in is needed before hosting.
 
 ## Where to start
 

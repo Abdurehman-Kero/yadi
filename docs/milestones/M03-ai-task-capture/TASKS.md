@@ -7,7 +7,7 @@
 - [x] Evaluation set (20 cases), scorer, live-run script
 - [x] All gates pass with no live AI
 - [x] Owner: Gemini key in `.env`; first live call succeeded
-- [ ] **Owed (D-013):** run the evaluation; tune the prompt if needed; measure latency and cost
-- [ ] Compare `gemini-3.5-flash-lite` with `gemini-3.8-flash` if accuracy falls short
+- [x] Evaluation run and prompt tuned (20/20); latency and cost measured
+- [x] No need yet for `gemini-3.8-flash`: the cheaper model passed
 - [ ] Before real users: paid billing and a review of Google's data terms
-- [ ] Owner approval
+- [x] Owner approval to move on

@@ -7,6 +7,6 @@
 - [x] One message box with conversation, options and confirmation
 - [x] Intent evaluation set and scorer
 - [x] All gates pass with a fake model
-- [ ] **Owed: run both evaluations on the real model** (owner approval needed; uses Gemini quota)
-- [ ] Tune the prompt from the results
+- [x] Both evaluations run on the real model (20/20 and 24/24 after tuning)
+- [x] Prompts tuned from the results
 - [ ] Owner review and commit

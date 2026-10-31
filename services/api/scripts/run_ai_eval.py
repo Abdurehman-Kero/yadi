@@ -7,6 +7,7 @@ Add --intents to score understanding of changes and questions instead of new tas
 
 import json
 import sys
+import time
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -27,6 +28,38 @@ from yadi.modules.assistant.schemas import Extraction
 from yadi.modules.assistant.service import estimate_cost
 from yadi.modules.tasks.models import Task
 
+# Free-tier limits are per minute; pacing keeps a run from failing on them.
+PACE_SECONDS = 6.5
+
+
+def _flag(name: str) -> str | None:
+    for arg in sys.argv:
+        if arg.startswith(f"--{name}="):
+            return arg.split("=", 1)[1]
+    return None
+
+
+def _selected(cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    only = _flag("only")
+    return [c for c in cases if only is None or c["id"] in only.split(",")]
+
+
+def _timed(client: GeminiLlmClient, schema: Any, system: str, prompt: str) -> Any:
+    time.sleep(PACE_SECONDS)
+    start = time.perf_counter()
+    result = client.generate_structured(schema=schema, system=system, prompt=prompt)
+    LATENCIES.append(time.perf_counter() - start)
+    return result
+
+
+def _report_latency() -> None:
+    if LATENCIES:
+        ordered = sorted(LATENCIES)
+        print(f"Latency: median {ordered[len(ordered) // 2]:.1f} s, slowest {ordered[-1]:.1f} s.")
+
+
+LATENCIES: list[float] = []
+
 
 def _candidate(raw: dict[str, Any], number: int) -> Task:
     return Task(
@@ -45,7 +78,8 @@ def run_intents(client: GeminiLlmClient) -> None:
     now = datetime.fromisoformat(data["now"])
     tasks = [_candidate(raw, i) for i, raw in enumerate(data["tasks"], start=1)]
     passed = 0
-    for case in data["cases"]:
+    cases = _selected(data["cases"])
+    for case in cases:
         prompt = build_message_prompt(
             case["text"],
             tasks=tasks,
@@ -55,9 +89,7 @@ def run_intents(client: GeminiLlmClient) -> None:
             timezone=data["timezone"],
         )
         try:
-            result = client.generate_structured(
-                schema=Intent, system=CONVERSATION_PROMPT, prompt=prompt
-            )
+            result = _timed(client, Intent, CONVERSATION_PROMPT, prompt)
         except AiError as exc:
             print(f"ERROR {case['id']}: {exc.kind}")
             continue
@@ -66,7 +98,8 @@ def run_intents(client: GeminiLlmClient) -> None:
         print(f"{'PASS' if not failures else 'FAIL'}  {case['id']}")
         for failure in failures:
             print(f"      {failure}")
-    print(f"\nIntents: {passed}/{len(data['cases'])} passed.")
+    print(f"\nIntents: {passed}/{len(cases)} passed.")
+    _report_latency()
 
 
 def main() -> int:
@@ -88,12 +121,11 @@ def main() -> int:
         return 0
     passed = 0
     cost = Decimal(0)
-    for case in data["cases"]:
+    cases = _selected(data["cases"])
+    for case in cases:
         prompt = build_prompt(case["text"], now=now, timezone=data["timezone"])
         try:
-            result = client.generate_structured(
-                schema=Extraction, system=SYSTEM_PROMPT, prompt=prompt
-            )
+            result = _timed(client, Extraction, SYSTEM_PROMPT, prompt)
         except AiError as exc:
             print(f"ERROR {case['id']}: {exc.kind}")
             continue
@@ -103,9 +135,8 @@ def main() -> int:
         print(f"{'PASS' if not failures else 'FAIL'}  {case['id']}")
         for failure in failures:
             print(f"      {failure}")
-    print(
-        f"\n{passed}/{len(data['cases'])} passed. Model {client.model}. Estimated cost ${cost:.4f}."
-    )
+    print(f"\n{passed}/{len(cases)} passed. Model {client.model}. Estimated cost ${cost:.4f}.")
+    _report_latency()
     return 0
 
 

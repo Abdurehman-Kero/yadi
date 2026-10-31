@@ -10,12 +10,12 @@
 | KI-007 | `localhost` resolves to IPv6 first and stalls ~200 s on this machine. | Slow DB connections if used. | Use `127.0.0.1` (documented). |
 | KI-009 | Concurrent edits to one task: last save wins (no version check). | Low with one user. | Revisit when real multi-user arrives. |
 | KI-010 | No screen-reader pass; dark mode not viewed or axe-tested. | Possible accessibility gaps. | Do both before the MVP is called done (M10 at latest). |
-| KI-011 | No real AI call has been made. Request acceptance, accuracy, speed and cost are unknown. | Tell Yadi may fail in live use; it would fall back to the manual form. | Evaluation run once the owner provides a key. |
 | KI-012 | On Gemini's free tier, content is used to improve Google's products. | Not acceptable for real users' personal data. | Synthetic data only until paid billing is on; required before deployment. |
 | KI-013 | Every day counts as a working day. | Plans can land on weekends. | Weekday hours in M07. |
 | KI-014 | Tell Yadi cannot create fixed events or dependencies; dependencies have no UI. | User ticks the fixed box on the draft; dependencies are API-only. | Add in M06, once the evaluation exists. |
 | KI-015 | No real browser alert has been received; headless browsers cannot test it. | Browser alerts may need fixes. In-app notifications are unaffected. | Owner tries DEMO_SCRIPT step 7. |
 | KI-016 | The worker is a separate process with nothing to restart it. | No reminders are sent while it is stopped; they wait and arrive late. Settings shows this. | Hosting must keep it running. |
-| KI-017 | M06 has only been tested with a fake model. A misread could act on the wrong task where no confirmation is needed. | Reversible, and the reply states what changed, but unmeasured. | Run the evaluations; consider confirming more actions if accuracy is low. |
+| KI-017 | Evaluations used made-up messages, on which the prompts were also tuned. A misread could act on the wrong task where no confirmation is needed. | Reversible, and the reply states what changed. | Review real misreads; add unseen cases; consider confirming more actions. |
+| KI-018 | Gemini free-tier per-minute limits were hit after about 15 quick calls. New-task messages use two calls. | Rapid use falls back to the manual form. | Paid billing, or merge the two calls. |
 
 Resolved: KI-001 (spec truncation) — full text found in `writing-block.md`.

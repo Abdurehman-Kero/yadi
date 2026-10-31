@@ -88,6 +88,7 @@ export function SettingsScreen() {
 
   return (
     <form className="panel task-form" onSubmit={handleSubmit} noValidate>
+      <h2>Planning</h2>
       <div className="field">
         <label htmlFor="timezone">Timezone</label>
         <select
@@ -152,7 +153,7 @@ export function SettingsScreen() {
       <p className="live-region" role="status">
         {notice}
       </p>
-      <div className="actions">
+      <div className="form-actions">
         <button type="submit" className="button-primary" disabled={saving}>
           {saving ? "Saving…" : "Save settings"}
         </button>

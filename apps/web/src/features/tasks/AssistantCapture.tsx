@@ -190,30 +190,34 @@ export function AssistantCapture({ timeZone, onCreated, onChanged }: Props) {
         </div>
       )}
 
-      <form className="task-form" onSubmit={handleSubmit}>
-        <div className="field">
-          <label htmlFor="assistant-text">Your message</label>
-          <textarea
-            id="assistant-text"
-            rows={2}
-            maxLength={2000}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="Assignment due Friday at 5 PM. Move my project to the afternoon. What should I do next?"
-          />
-        </div>
-        <div className="actions">
-          <button type="submit" className="button-primary" disabled={working || !text.trim()}>
-            {working ? "Working…" : "Send"}
-          </button>
-        </div>
-        <p className="hint">
-          Your message goes to Google Gemini, our AI provider, to be understood. Yadi&apos;s own
-          rules decide what can change, and it asks before anything hard to undo.
-        </p>
+      <form className="composer" onSubmit={handleSubmit}>
+        <label htmlFor="assistant-text" className="visually-hidden">
+          Your message
+        </label>
+        <textarea
+          id="assistant-text"
+          rows={1}
+          maxLength={2000}
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={(event) => {
+            // Enter sends, as in any chat. Shift+Enter still makes a new line.
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          placeholder="Assignment due Friday at 5 PM, or: move my project to the afternoon"
+        />
+        <button type="submit" className="button-primary" disabled={working || !text.trim()}>
+          {working ? "Working…" : "Send"}
+        </button>
       </form>
+      <p className="hint">
+        Sent to Google Gemini to be understood. Yadi asks before anything hard to undo.
+      </p>
 
-      <p className="live-region" role="status">
+      <p className="visually-hidden" role="status">
         {working ? "Yadi is reading your message…" : ""}
       </p>
       {failure && !manual && (
@@ -236,8 +240,6 @@ export function AssistantCapture({ timeZone, onCreated, onChanged }: Props) {
             initial={manual}
             timeZone={timeZone}
             submitLabel="Save task"
-            onDiscard={() => setManual(null)}
-            discardLabel="Close"
             onSubmit={async (values) => {
               onCreated(await createTask(values));
               setManual(null);

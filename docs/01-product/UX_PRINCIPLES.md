@@ -14,3 +14,11 @@ Rules
 7. Don't encode priority/status/errors by colour alone (icon + text).
 8. Keyboard operable, visible focus, WCAG 2.2 AA contrast, labelled controls, responsive from phone to desktop.
 9. Plain, short language.
+
+## Patterns in use (2026-10-31)
+- **Today:** Tell Yadi at the top, then next up and the rest of today, with what needs attention at the side.
+- **Schedule:** a day strip above a day drawn to scale; details and moving live in a modal, so the timeline stays calm.
+- **Tasks:** one-click completion, grouped by when; secondary actions in a menu.
+- **Forms:** essentials first, the rest under "More options"; primary action bottom right.
+- **Confirmations** are brief toasts that do not move the layout; errors stay until dealt with.
+- **Words:** statuses say what they mean to the person ("Needs details", "Ready to plan"), not system terms.

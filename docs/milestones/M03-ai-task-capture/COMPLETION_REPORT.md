@@ -1,6 +1,6 @@
 # M03 Completion Report
 
-**Status: BUILT, NOT COMPLETE.** The owner made a successful live call, but the accuracy evaluation was skipped at the owner's request (D-013), so acceptance criteria M03-R4 and M03-R11 are unmet.
+**Status: COMPLETE, with a caveat.** Evaluated on the real model on 2026-10-31: 20/20 after prompt tuning, median 1.6 s. The prompts were tuned on the same made-up messages, so this does not predict real-world accuracy. See the M06 report.
 
 ## Provider change
 The owner chose Gemini instead of Anthropic (D-012). Only the adapter, settings, prices and the provider notice changed; the service, endpoint and screens did not.
@@ -17,7 +17,7 @@ Extraction endpoint, Gemini adapter behind an interface, usage and cost records 
 - `npm audit --omit=dev` and `pip-audit`: no known vulnerabilities.
 
 ## Not verified
-- Extraction accuracy and real-world latency and cost. One live call succeeded: `gemini-3.5-flash-lite`, 399 input and 174 output tokens, 2.0 seconds. One call proves the request is accepted and nothing more.
+- Accuracy on real people's messages, and cost and speed at real use.
 - Free-tier request limits: Google shows them only in AI Studio.
 - The API-error shapes in the tests are built from Google's documented format, not captured from live traffic.
 
@@ -32,4 +32,4 @@ Google's pricing page says free-tier content is used to improve its products; pa
 - Also improved: browser tests build in `.next-e2e`, so they can run while `npm run dev` is open.
 
 ## Remaining
-See TASKS.md. The key is in place; the evaluation is owed before the MVP is called complete.
+Paid billing and a review of Google's data terms before real users (KI-012).

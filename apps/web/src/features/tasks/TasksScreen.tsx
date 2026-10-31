@@ -32,6 +32,29 @@ const EMPTY_MESSAGES: Record<View, string> = {
   Cancelled: "No cancelled tasks.",
 };
 
+function groupTasks(tasks: Task[], view: View, now: number) {
+  if (view !== "Active") return [{ label: "", tasks }];
+  const week = now + 7 * 86_400_000;
+  const when = (task: Task) => {
+    const value = task.fixedStartAt ?? task.dueAt;
+    return value ? new Date(value).getTime() : null;
+  };
+  const sorted = [...tasks].sort((a, b) => (when(a) ?? Infinity) - (when(b) ?? Infinity));
+  const groups = [
+    { label: "Overdue", tasks: sorted.filter((t) => (when(t) ?? Infinity) < now) },
+    {
+      label: "Next 7 days",
+      tasks: sorted.filter((t) => {
+        const time = when(t);
+        return time !== null && time >= now && time < week;
+      }),
+    },
+    { label: "Later", tasks: sorted.filter((t) => (when(t) ?? 0) >= week) },
+    { label: "No date", tasks: sorted.filter((t) => when(t) === null) },
+  ];
+  return groups.filter((group) => group.tasks.length > 0);
+}
+
 export function TasksScreen() {
   const [timeZone, setTimeZone] = useState<string | null>(null);
   const [view, setView] = useState<View>("Active");
@@ -135,9 +158,12 @@ export function TasksScreen() {
   return (
     <>
       <div className="page-header">
-        <p className="page-subtitle">
-          Times are in {timeZone}. <Link href="/settings">Change timezone</Link>
-        </p>
+        <div>
+          <h1>Tasks</h1>
+          <p className="page-subtitle">
+            Times are in {timeZone}. <Link href="/settings">Change</Link>
+          </p>
+        </div>
         <button type="button" className="button-primary" onClick={() => setAdding(true)}>
           New task
         </button>
@@ -148,8 +174,6 @@ export function TasksScreen() {
           <TaskForm
             timeZone={timeZone}
             submitLabel="Add task"
-            onDiscard={() => setAdding(false)}
-            discardLabel="Close"
             onSubmit={async (values) => {
               setNotice(null);
               const created = await createTask(values);
@@ -195,22 +219,29 @@ export function TasksScreen() {
         ) : tasks.length === 0 ? (
           <p className="empty">{EMPTY_MESSAGES[view]}</p>
         ) : (
-          <ul className="task-list">
-            {tasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                timeZone={timeZone}
-                now={now}
-                busy={busyId === task.id}
-                onStart={() => runAction(task, startTask, (title) => `Started "${title}".`)}
-                onComplete={() => runAction(task, completeTask, (title) => `Completed "${title}".`)}
-                onReopen={() => runAction(task, reopenTask, (title) => `Reopened "${title}".`)}
-                onCancel={() => runAction(task, cancelTask, (title) => `Cancelled "${title}".`)}
-                onEdit={() => setEditingId(task.id)}
-              />
-            ))}
-          </ul>
+          groupTasks(tasks, view, now).map((group) => (
+            <div className="task-group" key={group.label}>
+              {group.label && <h3 className="eyebrow">{group.label}</h3>}
+              <ul className="task-list">
+                {group.tasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    timeZone={timeZone}
+                    now={now}
+                    busy={busyId === task.id}
+                    onStart={() => runAction(task, startTask, (title) => `Started "${title}".`)}
+                    onComplete={() =>
+                      runAction(task, completeTask, (title) => `Completed "${title}".`)
+                    }
+                    onReopen={() => runAction(task, reopenTask, (title) => `Reopened "${title}".`)}
+                    onCancel={() => runAction(task, cancelTask, (title) => `Cancelled "${title}".`)}
+                    onEdit={() => setEditingId(task.id)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))
         )}
         {nextCursor && (
           <button type="button" onClick={loadMore}>
@@ -225,7 +256,6 @@ export function TasksScreen() {
             task={editing}
             timeZone={timeZone}
             submitLabel="Save changes"
-            onDiscard={() => setEditingId(null)}
             onSubmit={async (values) => {
               applyResult(await updateTask(editing.id, values));
               setEditingId(null);

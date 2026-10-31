@@ -22,7 +22,7 @@ const LINKS = [
   },
   {
     href: "/notifications",
-    label: "Notifications",
+    label: "Alerts",
     icon: "M6 9a6 6 0 1 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9Zm4 10a2 2 0 0 0 4 0",
   },
   { href: "/settings", label: "Settings", icon: "M4 7h9m4 0h3M4 17h3m4 0h9M15 5v4M9 15v4" },

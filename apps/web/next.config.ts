@@ -5,6 +5,8 @@ import type { NextConfig } from "next";
 const apiUrl = process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8000";
 
 const nextConfig: NextConfig = {
+  // The dev badge covered the phone navigation.
+  devIndicators: false,
   // Browser tests build elsewhere, so they can run while `npm run dev` is open.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // Dev-only: this project uses 127.0.0.1 because localhost stalls on IPv6 here (KI-007).

@@ -68,6 +68,14 @@ export function formatDay(iso: string, timeZone: string): string {
   }).format(new Date(iso));
 }
 
+export function formatShortDay(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    weekday: "short",
+    day: "numeric",
+  }).format(new Date(iso));
+}
+
 /** The calendar day of an instant in `timeZone`, as "YYYY-MM-DD". */
 export function dayKey(iso: string, timeZone: string): string {
   return utcToWallTime(iso, timeZone).slice(0, 10);

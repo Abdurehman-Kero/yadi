@@ -11,7 +11,9 @@ import {
   getPreferences,
   getSchedule,
   listTasks,
+  savePreferences,
   startTask,
+  type Preferences,
   type Schedule,
   type Task,
 } from "@/lib/api";
@@ -21,7 +23,7 @@ import { AssistantCapture } from "@/features/tasks/AssistantCapture";
 import { TaskForm } from "@/features/tasks/TaskForm";
 import { dayKey, formatDateTime, formatDay, formatTime } from "@/lib/time";
 
-type Data = { timeZone: string; schedule: Schedule; tasks: Task[]; now: number };
+type Data = { preferences: Preferences; schedule: Schedule; tasks: Task[]; now: number };
 
 const ACTIVE = ["inbox", "planned", "scheduled", "in_progress"] as const;
 
@@ -39,12 +41,7 @@ export function TodayScreen() {
     Promise.all([getPreferences(), getSchedule(), listTasks([...ACTIVE])])
       .then(([preferences, schedule, page]) => {
         if (!current) return;
-        setData({
-          timeZone: preferences.timezone,
-          schedule,
-          tasks: page.items,
-          now: Date.now(),
-        });
+        setData({ preferences, schedule, tasks: page.items, now: Date.now() });
         setLoadError(null);
       })
       .catch((error) => {
@@ -94,10 +91,12 @@ export function TodayScreen() {
     );
   }
 
-  const { timeZone, schedule, tasks, now } = data;
+  const { preferences, schedule, tasks, now } = data;
+  const timeZone = preferences.timezone;
+  const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const today = dayKey(new Date(now).toISOString(), timeZone);
   const remaining = schedule.blocks.filter((b) => new Date(b.endAt).getTime() > now);
-  const todaysBlocks = schedule.blocks.filter((b) => dayKey(b.startAt, timeZone) === today);
+  const todaysBlocks = remaining.filter((b) => dayKey(b.startAt, timeZone) === today);
   const next = remaining[0];
   const overdue = tasks.filter(
     (t) => t.dueAt && !t.fixedStartAt && new Date(t.dueAt).getTime() < now,
@@ -105,8 +104,9 @@ export function TodayScreen() {
   const upcoming = tasks
     .filter((t) => t.dueAt && new Date(t.dueAt).getTime() >= now)
     .sort((a, b) => (a.dueAt as string).localeCompare(b.dueAt as string))
-    .slice(0, 5);
-  const needsPlan = !schedule.generatedAt && tasks.length > 0;
+    .slice(0, 4);
+  const needsPlan = !next && tasks.length > 0;
+  const isNew = tasks.length === 0 && schedule.blocks.length === 0;
 
   return (
     <>
@@ -135,8 +135,6 @@ export function TodayScreen() {
           <TaskForm
             timeZone={timeZone}
             submitLabel="Add task"
-            onDiscard={() => setAdding(false)}
-            discardLabel="Close"
             onSubmit={async (values) => {
               const created = await createTask(values);
               setAdding(false);
@@ -156,47 +154,32 @@ export function TodayScreen() {
         </p>
       )}
 
-      {next ? (
-        <section className="panel next-up" aria-labelledby="next-up">
-          <p className="eyebrow" id="next-up">
-            Next up ·{" "}
-            {dayKey(next.startAt, timeZone) === today
-              ? ""
-              : formatDay(next.startAt, timeZone) + " · "}
-            {formatTime(next.startAt, timeZone)} – {formatTime(next.endAt, timeZone)}
-          </p>
-          <p className="next-title">{next.title}</p>
-          <p className="block-reason">{next.reason}</p>
-          <div className="actions">
-            {next.status !== "in_progress" && (
-              <button
-                type="button"
-                disabled={working}
-                onClick={() => act(() => startTask(next.taskId), `Started "${next.title}".`)}
-              >
-                Start
-              </button>
-            )}
-            <button
-              type="button"
-              disabled={working}
-              onClick={() => act(() => completeTask(next.taskId), `Completed "${next.title}".`)}
-            >
-              Complete
-            </button>
-          </div>
-        </section>
-      ) : needsPlan ? (
-        <section className="panel next-up" aria-labelledby="next-up">
-          <p className="eyebrow" id="next-up">
-            Next up
-          </p>
-          <p className="next-title">
-            You have {tasks.length} {tasks.length === 1 ? "task" : "tasks"} without a plan.
-          </p>
-          <p className="block-reason">Choose Plan my week and Yadi will find time for them.</p>
-        </section>
-      ) : null}
+      {timeZone === "UTC" && browserZone !== "UTC" && (
+        <div className="message message-warning banner">
+          <span>Times are showing in UTC. This device is set to {browserZone}.</span>
+          <button
+            type="button"
+            disabled={working}
+            onClick={() =>
+              act(
+                () => savePreferences({ ...preferences, timezone: browserZone }),
+                `Times now use ${browserZone}.`,
+              )
+            }
+          >
+            Use {browserZone}
+          </button>
+        </div>
+      )}
+
+      <AssistantCapture
+        timeZone={timeZone}
+        onCreated={(task) => {
+          setNotice(`Added "${task.title}".`);
+          reload();
+        }}
+        onChanged={reload}
+      />
 
       {schedule.stale && (
         <p className="message message-warning">
@@ -204,80 +187,128 @@ export function TodayScreen() {
         </p>
       )}
 
-      <div className="grid-two">
-        <div className="stack">
-          <AssistantCapture
-            timeZone={timeZone}
-            onCreated={(task) => {
-              setNotice(`Added "${task.title}".`);
-              reload();
-            }}
-            onChanged={reload}
-          />
-          <section className="panel" aria-labelledby="today-schedule">
-            <div className="panel-header">
-              <h2 id="today-schedule">Today&apos;s schedule</h2>
-              <Link href="/schedule">Full schedule</Link>
-            </div>
-            {todaysBlocks.length === 0 ? (
-              <p className="empty">Nothing is planned for the rest of today.</p>
+      {isNew ? (
+        <section className="panel empty-state">
+          <h2>Welcome to Yadi</h2>
+          <p>
+            Tell Yadi what is on your plate, in your own words. Then choose Plan my week, and Yadi
+            will fit it around your commitments and remind you when it is time.
+          </p>
+        </section>
+      ) : (
+        <div className="grid-two">
+          <div className="stack">
+            {next ? (
+              <section className="panel next-up" aria-labelledby="next-up">
+                <p className="eyebrow" id="next-up">
+                  Next up ·{" "}
+                  {dayKey(next.startAt, timeZone) === today
+                    ? ""
+                    : `${formatDay(next.startAt, timeZone)} · `}
+                  {formatTime(next.startAt, timeZone)} – {formatTime(next.endAt, timeZone)}
+                </p>
+                <p className="next-title">{next.title}</p>
+                <div className="actions">
+                  {next.status !== "in_progress" && (
+                    <button
+                      type="button"
+                      disabled={working}
+                      onClick={() => act(() => startTask(next.taskId), `Started "${next.title}".`)}
+                    >
+                      Start
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={working}
+                    onClick={() =>
+                      act(() => completeTask(next.taskId), `Completed "${next.title}".`)
+                    }
+                  >
+                    Complete
+                  </button>
+                </div>
+              </section>
             ) : (
-              <ul className="block-list">
-                {todaysBlocks.map((block) => (
-                  <BlockRow key={block.id} block={block} timeZone={timeZone} />
-                ))}
-              </ul>
+              needsPlan && (
+                <section className="panel next-up" aria-labelledby="next-up">
+                  <p className="eyebrow" id="next-up">
+                    Next up
+                  </p>
+                  <p className="next-title">
+                    {tasks.length} {tasks.length === 1 ? "task is" : "tasks are"} waiting for a plan
+                  </p>
+                  <p className="hint">Choose Plan my week, and Yadi will find time for them.</p>
+                </section>
+              )
             )}
-          </section>
-        </div>
 
-        <div className="stack">
-          {overdue.length > 0 && (
-            <section className="panel" aria-labelledby="overdue">
-              <h2 id="overdue">Overdue</h2>
-              <ul className="attention-list">
-                {overdue.map((task) => (
-                  <li className="attention-item" key={task.id}>
-                    <h3>{task.title}</h3>
-                    <p className="hint">
-                      <span className="overdue">Overdue</span> · was due{" "}
-                      {formatDateTime(task.dueAt as string, timeZone)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+            <section className="panel" aria-labelledby="today-schedule">
+              <div className="panel-header">
+                <h2 id="today-schedule">Rest of today</h2>
+                <Link href="/schedule">Full schedule</Link>
+              </div>
+              {todaysBlocks.length === 0 ? (
+                <p className="empty">Nothing else is planned for today.</p>
+              ) : (
+                <ul className="agenda">
+                  {todaysBlocks.map((block) => (
+                    <BlockRow key={block.id} block={block} timeZone={timeZone} />
+                  ))}
+                </ul>
+              )}
             </section>
-          )}
-          <ScheduleNotices
-            schedule={{
-              ...schedule,
-              // Overdue tasks already have their own panel above.
-              unscheduled: schedule.unscheduled.filter(
-                (item) => !overdue.some((task) => task.id === item.taskId),
-              ),
-            }}
-            timeZone={timeZone}
-          />
-          <section className="panel" aria-labelledby="upcoming">
-            <div className="panel-header">
-              <h2 id="upcoming">Upcoming deadlines</h2>
-              <Link href="/tasks">All tasks</Link>
-            </div>
-            {upcoming.length === 0 ? (
-              <p className="empty">No deadlines coming up.</p>
-            ) : (
-              <ul className="attention-list">
-                {upcoming.map((task) => (
-                  <li className="attention-item" key={task.id}>
-                    <h3>{task.title}</h3>
-                    <p className="hint">Due {formatDateTime(task.dueAt as string, timeZone)}</p>
-                  </li>
-                ))}
-              </ul>
+          </div>
+
+          <div className="stack">
+            {overdue.length > 0 && (
+              <section className="panel panel-attention" aria-labelledby="overdue">
+                <h2 id="overdue">Overdue</h2>
+                <ul className="attention-list">
+                  {overdue.map((task) => (
+                    <li className="attention-item" key={task.id}>
+                      <h3>{task.title}</h3>
+                      <p className="hint">
+                        <span className="overdue">Overdue</span> · was due{" "}
+                        {formatDateTime(task.dueAt as string, timeZone)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
-          </section>
+            <ScheduleNotices
+              compact
+              schedule={{
+                ...schedule,
+                // Overdue tasks already have their own panel above.
+                unscheduled: schedule.unscheduled.filter(
+                  (item) => !overdue.some((task) => task.id === item.taskId),
+                ),
+              }}
+              timeZone={timeZone}
+            />
+            <section className="panel" aria-labelledby="upcoming">
+              <div className="panel-header">
+                <h2 id="upcoming">Upcoming deadlines</h2>
+                <Link href="/tasks">All tasks</Link>
+              </div>
+              {upcoming.length === 0 ? (
+                <p className="empty">No deadlines coming up.</p>
+              ) : (
+                <ul className="attention-list">
+                  {upcoming.map((task) => (
+                    <li className="attention-item" key={task.id}>
+                      <h3>{task.title}</h3>
+                      <p className="hint">Due {formatDateTime(task.dueAt as string, timeZone)}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

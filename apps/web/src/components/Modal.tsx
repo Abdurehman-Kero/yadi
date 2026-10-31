@@ -33,8 +33,8 @@ export function Modal({ title, onClose, children }: Props) {
     >
       <div className="modal-header">
         <h2 id={titleId}>{title}</h2>
-        <button type="button" className="button-quiet" onClick={onClose}>
-          Close
+        <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
+          <span aria-hidden="true">×</span>
         </button>
       </div>
       <div className="modal-body">{children}</div>

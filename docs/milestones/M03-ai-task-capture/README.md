@@ -2,7 +2,7 @@
 
 **Purpose:** type a sentence, see the tasks Yadi understood, correct them, and save them. Nothing is saved until the user confirms.
 
-**Status:** Built, not complete: see COMPLETION_REPORT.md.
+**Status:** Complete, with a caveat: see COMPLETION_REPORT.md.
 
 ## In scope
 - `POST /api/v1/assistant/extract`: text in, validated task drafts and questions out. Saves no tasks.

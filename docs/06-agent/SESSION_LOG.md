@@ -24,3 +24,6 @@
 
 ## 2026-10-31 (M06)
 - Built change-by-chat with a fake model; 10/10 gates. Axe caught `role=log` on a list. Real-AI evaluations not run: no approval. M06 uncommitted.
+
+## 2026-10-31 (evaluation and UI/UX)
+- Owner approved evaluations and order. Tuned prompts: 20/20 and 24/24, on the tuning set. Redesigned Today, Schedule (timeline), Tasks, forms, toasts, wording, timezone prompt. A moved block now takes the screen to its new day.

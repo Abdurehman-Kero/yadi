@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import {
   errorMessage,
@@ -10,11 +10,11 @@ import {
   type TaskStatus,
 } from "@/lib/api";
 import { formatDateTime, formatTime } from "@/lib/time";
-import { PRIORITIES } from "./TaskForm";
 
+// Plain words for what each status means to the person, not to the system.
 const STATUS_LABELS: Record<TaskStatus, string> = {
-  inbox: "Inbox",
-  planned: "Planned",
+  inbox: "Needs details",
+  planned: "Ready to plan",
   scheduled: "Scheduled",
   in_progress: "In progress",
   completed: "Completed",
@@ -59,12 +59,18 @@ export function TaskRow({
   const [confirming, setConfirming] = useState(false);
   const [events, setEvents] = useState<TaskEvent[] | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const menu = useRef<HTMLDetailsElement>(null);
 
   const finished = task.status === "completed" || task.status === "cancelled";
   const overdue = !finished && task.dueAt !== null && new Date(task.dueAt).getTime() < now;
-  const priority = PRIORITIES.find((option) => option.value === task.priority)?.label;
+  const important = task.priority === "critical" || task.priority === "high";
+
+  function closeMenu() {
+    if (menu.current) menu.current.open = false;
+  }
 
   async function toggleHistory() {
+    closeMenu();
     if (events) {
       setEvents(null);
       return;
@@ -78,69 +84,114 @@ export function TaskRow({
   }
 
   return (
-    <li className="task-row">
+    <li className={`task-row${finished ? " task-finished" : ""}`}>
+      {!finished ? (
+        <button
+          type="button"
+          className="check-button"
+          disabled={busy}
+          onClick={onComplete}
+          title="Mark as complete"
+        >
+          <span className="visually-hidden">Complete {task.title}</span>
+        </button>
+      ) : (
+        <span className="check-done" aria-hidden="true">
+          {task.status === "completed" ? "✓" : "–"}
+        </span>
+      )}
+
       <div className="task-main">
         <h3 className="task-title">{task.title}</h3>
         <p className="task-meta">
-          <span className="badge">{STATUS_LABELS[task.status]}</span>
-          <span className={`badge priority-${task.priority}`}>{priority} priority</span>
           {task.fixedStartAt && task.fixedEndAt && (
-            <>
-              <span className="badge badge-fixed">Fixed</span>
-              <span>
-                {formatDateTime(task.fixedStartAt, timeZone)} –{" "}
-                {formatTime(task.fixedEndAt, timeZone)}
-              </span>
-            </>
+            <span>
+              <span className="badge badge-fixed">Fixed</span>{" "}
+              {formatDateTime(task.fixedStartAt, timeZone)} –{" "}
+              {formatTime(task.fixedEndAt, timeZone)}
+            </span>
           )}
-          {task.dueAt && <span>Due {formatDateTime(task.dueAt, timeZone)}</span>}
-          {overdue && <span className="overdue">Overdue</span>}
+          {task.dueAt && (
+            <span className={overdue ? "overdue" : undefined}>
+              {overdue ? "Overdue · due " : "Due "}
+              {formatDateTime(task.dueAt, timeZone)}
+            </span>
+          )}
           {task.estimatedMinutes !== null && <span>{task.estimatedMinutes} min</span>}
           {task.preferredPeriod && <span>Prefers {task.preferredPeriod}</span>}
           {!task.reminderEnabled && <span>No reminder</span>}
         </p>
         {task.description && <p className="task-notes">{task.description}</p>}
+        {historyError && (
+          <p className="message message-error" role="alert">
+            {historyError}
+          </p>
+        )}
+        {events && (
+          <ol className="history" aria-label={`History of ${task.title}`}>
+            {events.map((event) => (
+              <li key={event.id}>
+                {EVENT_LABELS[event.type] ?? event.type} · {formatDateTime(event.at, timeZone)}
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
 
-      <div className="actions">
-        {!finished && task.status !== "in_progress" && (
-          <button type="button" disabled={busy} onClick={onStart}>
-            Start<span className="visually-hidden"> {task.title}</span>
-          </button>
+      <div className="task-side">
+        {important && (
+          <span className={`badge priority-${task.priority}`}>
+            {task.priority === "critical" ? "Critical" : "High"}
+          </span>
         )}
-        {!finished && (
-          <button type="button" disabled={busy} onClick={onComplete}>
-            Complete<span className="visually-hidden"> {task.title}</span>
-          </button>
-        )}
-        {task.status === "completed" && (
-          <button type="button" disabled={busy} onClick={onReopen}>
-            Reopen<span className="visually-hidden"> {task.title}</span>
-          </button>
-        )}
-        {!finished && (
-          <>
-            <button type="button" disabled={busy} onClick={onEdit}>
-              Edit<span className="visually-hidden"> {task.title}</span>
+        <span className="badge">{STATUS_LABELS[task.status]}</span>
+        <div className="row-actions">
+          {!finished && task.status !== "in_progress" && !task.fixedStartAt && (
+            <button type="button" disabled={busy} onClick={onStart}>
+              Start<span className="visually-hidden"> {task.title}</span>
             </button>
-            <button
-              type="button"
-              className="button-quiet"
-              disabled={busy}
-              onClick={() => setConfirming(true)}
-            >
-              Cancel task<span className="visually-hidden"> {task.title}</span>
+          )}
+          {task.status === "completed" && (
+            <button type="button" disabled={busy} onClick={onReopen}>
+              Reopen<span className="visually-hidden"> {task.title}</span>
             </button>
-          </>
-        )}
-        <button
-          type="button"
-          className="button-quiet"
-          aria-expanded={events !== null}
-          onClick={toggleHistory}
-        >
-          History<span className="visually-hidden"> of {task.title}</span>
-        </button>
+          )}
+          <details className="menu" ref={menu}>
+            <summary aria-label={`More actions for ${task.title}`}>
+              <span aria-hidden="true">•••</span>
+            </summary>
+            <div className="menu-items">
+              {!finished && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    closeMenu();
+                    onEdit();
+                  }}
+                >
+                  Edit<span className="visually-hidden"> {task.title}</span>
+                </button>
+              )}
+              <button type="button" aria-expanded={events !== null} onClick={toggleHistory}>
+                History<span className="visually-hidden"> of {task.title}</span>
+              </button>
+              {!finished && (
+                <button
+                  type="button"
+                  className="menu-danger"
+                  disabled={busy}
+                  onClick={() => {
+                    closeMenu();
+                    setConfirming(true);
+                  }}
+                >
+                  Cancel task<span className="visually-hidden"> {task.title}</span>
+                </button>
+              )}
+            </div>
+          </details>
+        </div>
       </div>
 
       {confirming && (
@@ -149,7 +200,10 @@ export function TaskRow({
             &ldquo;{task.title}&rdquo; will move to Cancelled. This cannot be undone, and its
             reminders will stop.
           </p>
-          <div className="actions">
+          <div className="form-actions">
+            <button type="button" onClick={() => setConfirming(false)}>
+              Keep task
+            </button>
             <button
               type="button"
               className="button-danger"
@@ -161,26 +215,8 @@ export function TaskRow({
             >
               Yes, cancel task
             </button>
-            <button type="button" onClick={() => setConfirming(false)}>
-              Keep task
-            </button>
           </div>
         </Modal>
-      )}
-
-      {historyError && (
-        <p className="message message-error" role="alert">
-          {historyError}
-        </p>
-      )}
-      {events && (
-        <ol className="history">
-          {events.map((event) => (
-            <li key={event.id}>
-              {EVENT_LABELS[event.type] ?? event.type} · {formatDateTime(event.at, timeZone)}
-            </li>
-          ))}
-        </ol>
       )}
     </li>
   );
